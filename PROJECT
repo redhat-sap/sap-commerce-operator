@@ -1,0 +1,14 @@
+domain: hybris.org
+layout: go.kubebuilder.io/v2
+projectName: sap-commerce-operator
+repo: github.com/redhat-sap/sap-commerce-operator
+resources:
+- group: hybris
+  kind: HybrisBase
+  version: v1alpha1
+- group: hybris
+  kind: HybrisApp
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}

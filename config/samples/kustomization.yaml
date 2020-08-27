@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- hybris_v1alpha1_hybrisbase.yaml
+- hybris_v1alpha1_hybrisapp.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

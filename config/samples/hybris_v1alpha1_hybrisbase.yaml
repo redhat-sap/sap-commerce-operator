@@ -1,0 +1,7 @@
+apiVersion: hybris.hybris.org/v1alpha1
+kind: HybrisBase
+metadata:
+  name: hybrisbase-sample
+spec:
+  # Add fields here
+  foo: bar

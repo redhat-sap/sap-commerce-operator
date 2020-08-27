@@ -1,0 +1,24 @@
+# permissions for end users to edit hybrisapps.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hybrisapp-editor-role
+rules:
+- apiGroups:
+  - hybris.hybris.org
+  resources:
+  - hybrisapps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - hybris.hybris.org
+  resources:
+  - hybrisapps/status
+  verbs:
+  - get
