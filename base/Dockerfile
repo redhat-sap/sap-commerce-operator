@@ -5,6 +5,7 @@ ARG HYBRIS_URL
 ARG USERNAME
 ARG PASSWORD
 RUN curl -L -o /tmp/sapmachine-jdk.rpm $SAP_JDK_URL
+RUN echo $USERNAME:$PASSWORD
 RUN curl -u $USERNAME:$PASSWORD -v -k -o /tmp/hybris.tar.gz $HYBRIS_URL
 RUN tar -xzf /tmp/hybris.tar.gz -C /tmp
 
