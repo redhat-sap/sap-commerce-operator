@@ -1,2 +1,11 @@
 resources:
 - manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: hybris
+  newTag: latest
+- name: hybris
+  newName: hybris
+  newTag: latest

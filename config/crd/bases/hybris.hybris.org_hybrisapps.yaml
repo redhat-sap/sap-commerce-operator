@@ -1,0 +1,58 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: hybrisapps.hybris.hybris.org
+spec:
+  group: hybris.hybris.org
+  names:
+    kind: HybrisApp
+    listKind: HybrisAppList
+    plural: hybrisapps
+    singular: hybrisapp
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: HybrisApp is the Schema for the hybrisapps API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: HybrisAppSpec defines the desired state of HybrisApp
+          properties:
+            foo:
+              description: Foo is an example field of HybrisApp. Edit HybrisApp_types.go
+                to remove/update
+              type: string
+          type: object
+        status:
+          description: HybrisAppStatus defines the observed state of HybrisApp
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
