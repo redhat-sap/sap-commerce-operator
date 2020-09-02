@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/operator-framework/operator-lib/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,17 +26,32 @@ import (
 
 // HybrisBaseSpec defines the desired state of HybrisBase
 type HybrisBaseSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Hybris package download URL used to download the package and build the base image
+	// +kubebuilder:validation:Required
+	URL string `json:"URL,omitempty"`
 
-	// Foo is an example field of HybrisBase. Edit HybrisBase_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// SAP account username used to download the Hybris package
+	// +kubebuilder:validation:Required
+	Username string `json:"username,omitempty"`
+
+	// SAP account password used to download the Hybris package
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Format:=password
+	Password string `json:"password,omitempty"`
+
+	// SAP Jdk download URL used to build the base image
+	JdkURL string `json:"jdkURL,omitempty"`
+
+	// Name of the Hybris base image to be built
+	ImageName string `json:"imageName,omitempty"`
+
+	// Tag of the Hybris base image to be built
+	ImageTag string `json:"imageTag,omitempty"`
 }
 
 // HybrisBaseStatus defines the observed state of HybrisBase
 type HybrisBaseStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	BuildConditions map[string]status.Conditions `json:"buildConditions"`
 }
 
 // +kubebuilder:object:root=true
