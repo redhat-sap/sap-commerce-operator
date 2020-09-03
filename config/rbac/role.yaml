@@ -23,6 +23,18 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
@@ -56,6 +68,7 @@ rules:
   - hybris.hybris.org
   resources:
   - hybrisbases
+  - hybrisbases/finalizers
   verbs:
   - create
   - delete

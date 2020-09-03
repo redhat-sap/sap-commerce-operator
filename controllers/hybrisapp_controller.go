@@ -36,6 +36,7 @@ type HybrisAppReconciler struct {
 
 // +kubebuilder:rbac:groups=hybris.hybris.org,namespace="my-namespace",resources=hybrisapps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=hybris.hybris.org,namespace="my-namespace",resources=hybrisapps/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=core,namespace="my-namespace",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 func (r *HybrisAppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

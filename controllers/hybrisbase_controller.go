@@ -51,7 +51,7 @@ type HybrisBaseReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=hybris.hybris.org,namespace="my-namespace",resources=hybrisbases,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=hybris.hybris.org,namespace="my-namespace",resources=hybrisbases;hybrisbases/finalizers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=hybris.hybris.org,namespace="my-namespace",resources=hybrisbases/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=build.openshift.io,namespace="my-namespace",resources=buildconfigs;builds,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=image.openshift.io,namespace="my-namespace",resources=imagestreams,verbs=get;list;watch;create;update;patch;delete
@@ -77,25 +77,20 @@ func (r *HybrisBaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	result, err := r.ensureImageStream(hybrisBase, ctx, log)
-	if result {
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
+	updateImageStream, err := r.ensureImageStream(hybrisBase, ctx, log)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	result, err = r.ensureSecret(hybrisBase, ctx, log)
-	if result {
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
+	updateSecret, err := r.ensureSecret(hybrisBase, ctx, log)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	result, err = r.ensureBuildConfig(hybrisBase, ctx, log)
-	if result {
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
+	updateBuildConfig, err := r.ensureBuildConfig(hybrisBase, ctx, log)
+	if err != nil {
 		return ctrl.Result{}, err
+	}
+	if updateImageStream || updateSecret || updateBuildConfig {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// List the builds for Hybirs base image
@@ -139,6 +134,7 @@ func (r *HybrisBaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&hybrisv1alpha1.HybrisBase{}).
 		Owns(&buildv1.BuildConfig{}).
 		Owns(&imagev1.ImageStream{}).
+		Owns(&corev1.Secret{}).
 		Complete(r)
 }
 
@@ -264,12 +260,12 @@ func (r *HybrisBaseReconciler) ensureBuildConfig(hybrisBase *hybrisv1alpha1.Hybr
 	isNameTag := strings.Join([]string{isName, isTag}, ":")
 	jdkURL := jdkURL(hybrisBase)
 
-	foundJdkURL := envValue("SAP_JDK_URL", found.Spec.CommonSpec.Strategy.DockerStrategy.BuildArgs)
-	foundURL := envValue("HYBRIS_URL", found.Spec.CommonSpec.Strategy.DockerStrategy.BuildArgs)
+	foundJdkURL := envValue("SAP_JDK_URL", found.Spec.CommonSpec.Strategy.DockerStrategy.Env)
+	foundURL := envValue("HYBRIS_URL", found.Spec.CommonSpec.Strategy.DockerStrategy.Env)
 
 	if found.Spec.CommonSpec.Output.To.Name != isNameTag || foundJdkURL != jdkURL || foundURL != hybrisBase.Spec.URL {
-		found.Spec.CommonSpec.Strategy.DockerStrategy.BuildArgs = replaceEnvValue("SAP_JDK_URL", jdkURL, found.Spec.CommonSpec.Strategy.DockerStrategy.BuildArgs)
-		found.Spec.CommonSpec.Strategy.DockerStrategy.BuildArgs = replaceEnvValue("HYBRIS_URL", hybrisBase.Spec.URL, found.Spec.CommonSpec.Strategy.DockerStrategy.BuildArgs)
+		found.Spec.CommonSpec.Strategy.DockerStrategy.Env = replaceEnvValue("SAP_JDK_URL", jdkURL, found.Spec.CommonSpec.Strategy.DockerStrategy.Env)
+		found.Spec.CommonSpec.Strategy.DockerStrategy.Env = replaceEnvValue("HYBRIS_URL", hybrisBase.Spec.URL, found.Spec.CommonSpec.Strategy.DockerStrategy.Env)
 		found.Spec.CommonSpec.Output.To.Name = isNameTag
 		err = r.Update(ctx, found)
 		if err != nil {
@@ -314,7 +310,7 @@ func (r *HybrisBaseReconciler) createBuildConfigForHybrisBase(hybrisBase *hybris
 				Strategy: buildv1.BuildStrategy{
 					Type: buildv1.DockerBuildStrategyType,
 					DockerStrategy: &buildv1.DockerBuildStrategy{
-						BuildArgs: []corev1.EnvVar{
+						Env: []corev1.EnvVar{
 							{
 								Name:  "SAP_JDK_URL",
 								Value: jdkURL,
