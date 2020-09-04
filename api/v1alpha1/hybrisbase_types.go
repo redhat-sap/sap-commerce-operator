@@ -21,9 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // HybrisBaseSpec defines the desired state of HybrisBase
 type HybrisBaseSpec struct {
 	// Hybris package download URL used to download the package and build the base image

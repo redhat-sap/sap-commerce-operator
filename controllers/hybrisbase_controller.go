@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +41,7 @@ import (
 )
 
 const (
-	DOCKER_FILE_REPO_URL = "https://github.com/xieshenzh/sap-commerce-operator"
+	DOCKER_FILE_REPO_URL = "https://github.com/xieshenzh/sap-commerce-app-example"
 	SAP_JDK_URL          = "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm"
 )
 
@@ -77,20 +78,23 @@ func (r *HybrisBaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	updateImageStream, err := r.ensureImageStream(hybrisBase, ctx, log)
-	if err != nil {
+	updated, err := r.ensureImageStream(hybrisBase, ctx, log)
+	if updated {
+		return ctrl.Result{}, nil
+	} else if err != nil {
 		return ctrl.Result{}, err
 	}
-	updateSecret, err := r.ensureSecret(hybrisBase, ctx, log)
-	if err != nil {
+	updated, err = r.ensureSecret(hybrisBase, ctx, log)
+	if updated {
+		return ctrl.Result{}, nil
+	} else if err != nil {
 		return ctrl.Result{}, err
 	}
-	updateBuildConfig, err := r.ensureBuildConfig(hybrisBase, ctx, log)
-	if err != nil {
+	updated, err = r.ensureBuildConfig(hybrisBase, ctx, log)
+	if updated {
+		return ctrl.Result{}, nil
+	} else if err != nil {
 		return ctrl.Result{}, err
-	}
-	if updateImageStream || updateSecret || updateBuildConfig {
-		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// List the builds for Hybirs base image
@@ -105,25 +109,44 @@ func (r *HybrisBaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	updateStatus := false
-	for _, build := range buildList.Items {
-		statusCondition := statusCondition(build.Status.Conditions)
-		if conditions, ok := hybrisBase.Status.BuildConditions[build.Name]; ok {
-			if !reflect.DeepEqual(conditions, statusCondition) {
-				hybrisBase.Status.BuildConditions[build.Name] = statusCondition
+	building := false
+	statusConditions := map[string]status.Conditions{}
+	if len(buildList.Items) > 0 {
+		for _, build := range buildList.Items {
+			statusCondition := statusCondition(build.Status.Conditions)
+			conditions, ok := hybrisBase.Status.BuildConditions[build.Name]
+			if !ok || !reflect.DeepEqual(conditions, statusCondition) {
+				statusConditions[build.Name] = statusCondition
+				log.Info("Status condition", "status conditions", statusCondition)
+				log.Info("Status condition", "build conditions", statusConditions[build.Name])
+
+				for _, c := range statusConditions[build.Name] {
+					log.Info("Check condition", "cod", c)
+				}
+
 				updateStatus = true
 			}
-		} else {
-			hybrisBase.Status.BuildConditions[build.Name] = statusCondition
-			updateStatus = true
+
+			if build.Status.Phase == buildv1.BuildPhaseNew ||
+				build.Status.Phase == buildv1.BuildPhasePending ||
+				build.Status.Phase == buildv1.BuildPhaseRunning {
+				building = true
+			}
 		}
 	}
 
 	if updateStatus {
+		hybrisBase.Status.BuildConditions = statusConditions
 		err := r.Status().Update(ctx, hybrisBase)
 		if err != nil {
 			log.Error(err, "Failed to update HybrisBase status")
 			return ctrl.Result{}, err
 		}
+		log.Info("HybrisBase status updated")
+		return ctrl.Result{Requeue: true}, nil
+	} else if building {
+		log.Info("HybrisBase building in process")
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -161,8 +184,12 @@ func (r *HybrisBaseReconciler) ensureSecret(hybrisBase *hybrisv1alpha1.HybrisBas
 		log.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 		err = r.Create(ctx, secret)
 		if err != nil {
-			log.Error(err, "Failed to create new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
-			return false, err
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+				return false, err
+			} else {
+				return true, nil
+			}
 		}
 		// Secret created successfully
 		log.Info("Secret created", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
@@ -220,8 +247,12 @@ func (r *HybrisBaseReconciler) ensureImageStream(hybrisBase *hybrisv1alpha1.Hybr
 		log.Info("Creating a new ImageStream", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
 		err = r.Create(ctx, is)
 		if err != nil {
-			log.Error(err, "Failed to create new ImageStream", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
-			return false, err
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create new ImageStream", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
+				return false, err
+			} else {
+				return true, nil
+			}
 		}
 		// ImageStream created successfully
 		log.Info("ImageStream created", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
@@ -244,14 +275,18 @@ func (r *HybrisBaseReconciler) ensureBuildConfig(hybrisBase *hybrisv1alpha1.Hybr
 		log.Info("Creating a new BuildConfig", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
 		err = r.Create(ctx, bc)
 		if err != nil {
-			log.Error(err, "Failed to create new BuildConfig", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
-			return false, err
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create new BuildConfig", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
+				return false, err
+			} else {
+				return true, nil
+			}
 		}
 		// BuildConfig created successfully
 		log.Info("BuildConfig created", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
 		return true, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Deployment")
+		log.Error(err, "Failed to get BuildConfig")
 		return false, err
 	}
 
@@ -402,8 +437,8 @@ func replaceEnvValue(name string, value string, array []corev1.EnvVar) []corev1.
 	})
 }
 
-func statusCondition(buildConditions []buildv1.BuildCondition) status.Conditions {
-	conditions := status.Conditions{}
+func statusCondition(buildConditions []buildv1.BuildCondition) []status.Condition {
+	var conditions []status.Condition
 	for _, buildCondition := range buildConditions {
 		conditions = append(conditions, status.Condition{
 			Type:               status.ConditionType(buildCondition.Type),

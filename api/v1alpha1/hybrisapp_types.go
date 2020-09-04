@@ -20,16 +20,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // HybrisAppSpec defines the desired state of HybrisApp
 type HybrisAppSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Hybris base image name
+	// +kubebuilder:validation:Required
+	BaseImageName string `json:"baseImageName,omitempty"`
 
-	// Foo is an example field of HybrisApp. Edit HybrisApp_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Hybris base image tag
+	// +kubebuilder:validation:Required
+	BaseImageTag string `json:"baseImageTag,omitempty"`
+
+	// Hybris app source repository URL
+	// +kubebuilder:validation:Required
+	SourceRepoURL string `json:"sourceRepoURL,omitempty"`
+
+	// Hybris app source repository reference
+	// +kubebuilder:validation:Required
+	SourceRepoRef string `json:"sourceRepoRef,omitempty"`
+
+	// Hybris app repository source location
+	// +kubebuilder:validation:Required
+	SourceRepoContext string `json:"sourceRepoContext,omitempty"`
 }
 
 // HybrisAppStatus defines the observed state of HybrisApp
