@@ -45,8 +45,7 @@ type HybrisAppSpec struct {
 
 // HybrisAppStatus defines the observed state of HybrisApp
 type HybrisAppStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	BuildConditions []BuildStatusCondition `json:"buildConditions"`
 }
 
 // +kubebuilder:object:root=true

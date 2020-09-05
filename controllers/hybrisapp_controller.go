@@ -18,19 +18,23 @@ package controllers
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"strings"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	hybrisv1alpha1 "github.com/redhat-sap/sap-commerce-operator/api/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	appsv1 "github.com/openshift/api/apps/v1"
 	buildv1 "github.com/openshift/api/build/v1"
@@ -85,6 +89,24 @@ func (r *HybrisAppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	} else if err != nil {
 		return ctrl.Result{}, err
 	}
+	updated, err = r.ensureDeploymentConfig(hybrisApp, ctx, log)
+	if updated {
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		return ctrl.Result{}, err
+	}
+	updated, err = r.ensureService(hybrisApp, ctx, log)
+	if updated {
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		return ctrl.Result{}, err
+	}
+	updated, err = r.ensureRoute(hybrisApp, ctx, log)
+	if updated {
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -121,8 +143,12 @@ func (r *HybrisAppReconciler) ensureImageStream(hybrisApp *hybrisv1alpha1.Hybris
 				},
 			},
 		}
-		// Set HybrisBase instance as the owner and controller
-		ctrl.SetControllerReference(hybrisApp, is, r.Scheme)
+		// Set HybrisApp instance as the owner and controller
+		err := ctrl.SetControllerReference(hybrisApp, is, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
+			return false, err
+		}
 
 		log.Info("Creating a new ImageStream", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
 		err = r.Create(ctx, is)
@@ -152,6 +178,13 @@ func (r *HybrisAppReconciler) ensureBuildConfig(hybrisApp *hybrisv1alpha1.Hybris
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		bc := r.createBuildConfigForHybrisApp(hybrisApp)
+		// Set HybrisApp instance as the owner and controller
+		err = ctrl.SetControllerReference(hybrisApp, bc, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
+			return false, err
+		}
+
 		log.Info("Creating a new BuildConfig", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
 		err = r.Create(ctx, bc)
 		if err != nil {
@@ -210,6 +243,12 @@ func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1a
 						Name: strings.Join([]string{hybrisApp.Name, "latest"}, ":"),
 					},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				},
 				Source: buildv1.BuildSource{
 					Type: buildv1.BuildSourceGit,
 					Git: &buildv1.GitBuildSource{
@@ -238,16 +277,252 @@ func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1a
 			},
 		},
 	}
-	// Set HybrisBase instance as the owner and controller
-	ctrl.SetControllerReference(hybrisApp, bc, r.Scheme)
 	return bc
+}
+
+func (r *HybrisAppReconciler) ensureService(hybrisApp *hybrisv1alpha1.HybrisApp, ctx context.Context, log logr.Logger) (updated bool, err error) {
+	// Check if the Service already exists, if not create a new one
+	found := &corev1.Service{}
+	err = r.Get(ctx, types.NamespacedName{Name: hybrisApp.Name, Namespace: hybrisApp.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Service
+		service := &corev1.Service{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      hybrisApp.Name,
+				Namespace: hybrisApp.Namespace,
+				Labels:    labelsForHybrisApp(hybrisApp.Name),
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name:       "9001-tcp",
+						Port:       9001,
+						TargetPort: intstr.FromInt(9001),
+						Protocol:   corev1.ProtocolTCP,
+					},
+					{
+						Name:       "9002-tcp",
+						Port:       9002,
+						TargetPort: intstr.FromInt(9002),
+						Protocol:   corev1.ProtocolTCP,
+					},
+				},
+				Selector: labelsForHybrisApp(hybrisApp.Name),
+				Type:     corev1.ServiceTypeClusterIP,
+			},
+		}
+		// Set HybrisApp instance as the owner and controller
+		err = ctrl.SetControllerReference(hybrisApp, service, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
+			return false, err
+		}
+
+		log.Info("Creating a new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
+		err = r.Create(ctx, service)
+		if err != nil {
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
+				return false, err
+			} else {
+				return true, nil
+			}
+		}
+		// Service created successfully
+		log.Info("Service created", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
+		return true, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Service")
+		return false, err
+	}
+
+	return false, nil
+}
+
+func (r *HybrisAppReconciler) ensureRoute(hybrisApp *hybrisv1alpha1.HybrisApp, ctx context.Context, log logr.Logger) (updated bool, err error) {
+	// Check if the Route already exists, if not create a new one
+	found := &routev1.Route{}
+	err = r.Get(ctx, types.NamespacedName{Name: hybrisApp.Name, Namespace: hybrisApp.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Route
+		route := &routev1.Route{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      hybrisApp.Name,
+				Namespace: hybrisApp.Namespace,
+				Labels:    labelsForHybrisApp(hybrisApp.Name),
+			},
+			Spec: routev1.RouteSpec{
+				Host: "",
+				Port: &routev1.RoutePort{
+					TargetPort: intstr.FromString("9002-tcp"),
+				},
+				TLS: &routev1.TLSConfig{
+					Termination: routev1.TLSTerminationPassthrough,
+				},
+				To: routev1.RouteTargetReference{
+					Kind: "Service",
+					Name: hybrisApp.Name,
+				},
+			},
+		}
+		// Set HybrisApp instance as the owner and controller
+		err = ctrl.SetControllerReference(hybrisApp, route, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
+			return false, err
+		}
+
+		log.Info("Creating a new Route", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
+		err = r.Create(ctx, route)
+		if err != nil {
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create new Route", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
+				return false, err
+			} else {
+				return true, nil
+			}
+		}
+		// Route created successfully
+		log.Info("Route created", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
+		return true, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Route")
+		return false, err
+	}
+
+	return false, nil
+}
+
+func (r *HybrisAppReconciler) ensureDeploymentConfig(hybrisApp *hybrisv1alpha1.HybrisApp, ctx context.Context, log logr.Logger) (updated bool, err error) {
+	// Check if the DeploymentConfig already exists, if not create a new one
+	found := &appsv1.DeploymentConfig{}
+	err = r.Get(ctx, types.NamespacedName{Name: hybrisApp.Name, Namespace: hybrisApp.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new DeploymentConfig
+		dc := r.createDeploymentConfigForHybrisApp(hybrisApp)
+		// Set HybrisApp instance as the owner and controller
+		err = ctrl.SetControllerReference(hybrisApp, dc, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "DeploymentConfig.Namespace", dc.Namespace, "DeploymentConfig.Name", dc.Name)
+			return false, err
+		}
+
+		log.Info("Creating a new DeploymentConfig", "DeploymentConfig.Namespace", dc.Namespace, "DeploymentConfig.Name", dc.Name)
+		err = r.Create(ctx, dc)
+		if err != nil {
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create new DeploymentConfig", "DeploymentConfig.Namespace", dc.Namespace, "DeploymentConfig.Name", dc.Name)
+				return false, err
+			} else {
+				return true, nil
+			}
+		}
+		// DeploymentConfig created successfully
+		log.Info("DeploymentConfig created", "DeploymentConfig.Namespace", dc.Namespace, "DeploymentConfig.Name", dc.Name)
+		return true, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get DeploymentConfig")
+		return false, err
+	}
+
+	return false, nil
+}
+
+// createDeploymentConfigForHybrisApp returns a BuildConfig object for building the Hybris app image
+func (r *HybrisAppReconciler) createDeploymentConfigForHybrisApp(hybrisApp *hybrisv1alpha1.HybrisApp) *appsv1.DeploymentConfig {
+	activeDeadlineSeconds := int64(21600)
+	intervalSeconds := int64(1)
+	maxSurge := intstr.FromString("25%")
+	maxUnavailable := intstr.FromString("25%")
+	timeoutSeconds := int64(600)
+	updatePeriodSeconds := int64(1)
+	terminationGracePeriodSeconds := int64(30)
+	dc := &appsv1.DeploymentConfig{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      hybrisApp.Name,
+			Namespace: hybrisApp.Namespace,
+			Labels:    labelsForHybrisApp(hybrisApp.Name),
+		},
+		Spec: appsv1.DeploymentConfigSpec{
+			Replicas: 1,
+			Selector: labelsForHybrisApp(hybrisApp.Name),
+			Strategy: appsv1.DeploymentStrategy{
+				ActiveDeadlineSeconds: &activeDeadlineSeconds,
+				Resources:             corev1.ResourceRequirements{},
+				RollingParams: &appsv1.RollingDeploymentStrategyParams{
+					IntervalSeconds:     &intervalSeconds,
+					MaxSurge:            &maxSurge,
+					MaxUnavailable:      &maxUnavailable,
+					TimeoutSeconds:      &timeoutSeconds,
+					UpdatePeriodSeconds: &updatePeriodSeconds,
+				},
+				Type: appsv1.DeploymentStrategyTypeRolling,
+			},
+			Template: &corev1.PodTemplateSpec{
+				ObjectMeta: v1.ObjectMeta{
+					Labels: labelsForHybrisApp(hybrisApp.Name),
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "",
+							Name:  hybrisApp.Name,
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 9001,
+									Protocol:      corev1.ProtocolTCP,
+								},
+								{
+									ContainerPort: 9002,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("2"),
+									corev1.ResourceMemory: resource.MustParse("6Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
+								},
+							},
+							TerminationMessagePath:   "/dev/termination-log",
+							TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						},
+					},
+					SecurityContext:               &corev1.PodSecurityContext{},
+					TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+				},
+			},
+			Triggers: appsv1.DeploymentTriggerPolicies{
+				{
+					Type: appsv1.DeploymentTriggerOnConfigChange,
+				},
+				{
+					Type: appsv1.DeploymentTriggerOnImageChange,
+					ImageChangeParams: &appsv1.DeploymentTriggerImageChangeParams{
+						Automatic: true,
+						ContainerNames: []string{
+							hybrisApp.Name,
+						},
+						From: corev1.ObjectReference{
+							Kind: "ImageStreamTag",
+							Name: strings.Join([]string{hybrisApp.Name, "latest"}, ":"),
+						},
+					},
+				},
+			},
+		},
+	}
+	return dc
 }
 
 // labelsForHybrisApp returns the labels for selecting the resources
 // belonging to the given HybrisApp CR name.
 func labelsForHybrisApp(name string) map[string]string {
 	return map[string]string{
-		"app":           "hybrisApp",
-		"hybrisBase_cr": name,
+		"app":          "hybrisApp",
+		"hybrisApp_cr": name,
 	}
 }

@@ -19,16 +19,20 @@ package controllers
 import (
 	"bytes"
 	"context"
-	"github.com/operator-framework/operator-lib/status"
-	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
+
+	"github.com/operator-framework/operator-lib/status"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -41,7 +45,7 @@ import (
 )
 
 const (
-	DOCKER_FILE_REPO_URL = "https://github.com/xieshenzh/sap-commerce-app-example"
+	DOCKER_FILE_REPO_URL = "https://github.com/xieshenzh/sap-commerce-operator"
 	SAP_JDK_URL          = "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm"
 )
 
@@ -108,23 +112,12 @@ func (r *HybrisBaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	updateStatus := false
 	building := false
-	statusConditions := map[string]status.Conditions{}
+	var statusConditions []hybrisv1alpha1.BuildStatusCondition
 	if len(buildList.Items) > 0 {
 		for _, build := range buildList.Items {
-			statusCondition := statusCondition(build.Status.Conditions)
-			conditions, ok := hybrisBase.Status.BuildConditions[build.Name]
-			if !ok || !reflect.DeepEqual(conditions, statusCondition) {
-				statusConditions[build.Name] = statusCondition
-				log.Info("Status condition", "status conditions", statusCondition)
-				log.Info("Status condition", "build conditions", statusConditions[build.Name])
-
-				for _, c := range statusConditions[build.Name] {
-					log.Info("Check condition", "cod", c)
-				}
-
-				updateStatus = true
+			for _, condition := range build.Status.Conditions {
+				statusConditions = append(statusConditions, *statusCondition(build.Name, &condition))
 			}
 
 			if build.Status.Phase == buildv1.BuildPhaseNew ||
@@ -133,9 +126,13 @@ func (r *HybrisBaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 				building = true
 			}
 		}
+
+		sort.SliceStable(statusConditions, func(i, j int) bool {
+			return statusConditions[i].LastTransitionTime.Before(&statusConditions[j].LastTransitionTime)
+		})
 	}
 
-	if updateStatus {
+	if !reflect.DeepEqual(hybrisBase.Status.BuildConditions, statusConditions) {
 		hybrisBase.Status.BuildConditions = statusConditions
 		err := r.Status().Update(ctx, hybrisBase)
 		if err != nil {
@@ -179,7 +176,11 @@ func (r *HybrisBaseReconciler) ensureSecret(hybrisBase *hybrisv1alpha1.HybrisBas
 			},
 		}
 		// Set HybrisBase instance as the owner and controller
-		ctrl.SetControllerReference(hybrisBase, secret, r.Scheme)
+		err = ctrl.SetControllerReference(hybrisBase, secret, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+			return false, err
+		}
 
 		log.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 		err = r.Create(ctx, secret)
@@ -242,7 +243,11 @@ func (r *HybrisBaseReconciler) ensureImageStream(hybrisBase *hybrisv1alpha1.Hybr
 			},
 		}
 		// Set HybrisBase instance as the owner and controller
-		ctrl.SetControllerReference(hybrisBase, is, r.Scheme)
+		err = ctrl.SetControllerReference(hybrisBase, is, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
+			return false, err
+		}
 
 		log.Info("Creating a new ImageStream", "ImageStream.Namespace", is.Namespace, "ImageStream.Name", is.Name)
 		err = r.Create(ctx, is)
@@ -272,6 +277,13 @@ func (r *HybrisBaseReconciler) ensureBuildConfig(hybrisBase *hybrisv1alpha1.Hybr
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		bc := r.createBuildConfigForHybrisBase(hybrisBase)
+		// Set HybrisBase instance as the owner and controller
+		err = ctrl.SetControllerReference(hybrisBase, bc, r.Scheme)
+		if err != nil {
+			log.Error(err, "Failed to set controller reference", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
+			return false, err
+		}
+
 		log.Info("Creating a new BuildConfig", "BuildConfig.Namespace", bc.Namespace, "BuildConfig.Name", bc.Name)
 		err = r.Create(ctx, bc)
 		if err != nil {
@@ -390,8 +402,6 @@ func (r *HybrisBaseReconciler) createBuildConfigForHybrisBase(hybrisBase *hybris
 			},
 		},
 	}
-	// Set HybrisBase instance as the owner and controller
-	ctrl.SetControllerReference(hybrisBase, bc, r.Scheme)
 	return bc
 }
 
@@ -437,18 +447,17 @@ func replaceEnvValue(name string, value string, array []corev1.EnvVar) []corev1.
 	})
 }
 
-func statusCondition(buildConditions []buildv1.BuildCondition) []status.Condition {
-	var conditions []status.Condition
-	for _, buildCondition := range buildConditions {
-		conditions = append(conditions, status.Condition{
+func statusCondition(buildName string, buildCondition *buildv1.BuildCondition) *hybrisv1alpha1.BuildStatusCondition {
+	return &hybrisv1alpha1.BuildStatusCondition{
+		BuildName: buildName,
+		Condition: status.Condition{
 			Type:               status.ConditionType(buildCondition.Type),
 			Status:             buildCondition.Status,
 			Reason:             status.ConditionReason(buildCondition.Reason),
 			Message:            buildCondition.Message,
 			LastTransitionTime: buildCondition.LastTransitionTime,
-		})
+		},
 	}
-	return conditions
 }
 
 // labelsForHybrisBase returns the labels for selecting the resources

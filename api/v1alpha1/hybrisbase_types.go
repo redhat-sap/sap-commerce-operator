@@ -46,9 +46,16 @@ type HybrisBaseSpec struct {
 	ImageTag string `json:"imageTag,omitempty"`
 }
 
+type BuildStatusCondition struct {
+	// Name of the build for the Hybris base image
+	BuildName string `json:"buildName"`
+
+	status.Condition `json:",inline"`
+}
+
 // HybrisBaseStatus defines the observed state of HybrisBase
 type HybrisBaseStatus struct {
-	BuildConditions map[string]status.Conditions `json:"buildConditions"`
+	BuildConditions []BuildStatusCondition `json:"buildConditions"`
 }
 
 // +kubebuilder:object:root=true
