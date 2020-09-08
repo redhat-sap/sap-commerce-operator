@@ -11,7 +11,10 @@ metadata:
             "name": "hybrisapp-sample"
           },
           "spec": {
-            "foo": "bar"
+            "baseImageName": "base",
+            "baseImageTag": "latest",
+            "sourceRepoRef": "master",
+            "sourceRepoURL": "https://github.com/xieshenzh/sap-commerce-app-example.git"
           }
         },
         {
@@ -21,7 +24,12 @@ metadata:
             "name": "hybrisbase-sample"
           },
           "spec": {
-            "foo": "bar"
+            "URL": "http://nexus-xz.apps.mw-ocp4.cloud.lab.eng.bos.redhat.com/nexus/service/local/repositories/releases/content/org/hybris/hybris/0.1/hybris-0.1.tar.gz",
+            "imageName": "hybris-base",
+            "imageTag": "v0.1",
+            "jdkURL": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm",
+            "password": "admin123",
+            "username": "admin"
           }
         }
       ]
@@ -141,10 +149,36 @@ spec:
           - create
           - patch
         - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - build.openshift.io
           resources:
           - buildconfigs
           - builds
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - secrets
+          - services
           verbs:
           - create
           - delete
@@ -169,6 +203,7 @@ spec:
           - hybris.hybris.org
           resources:
           - hybrisapps
+          - hybrisapps/finalizers
           verbs:
           - create
           - delete
@@ -189,6 +224,7 @@ spec:
           - hybris.hybris.org
           resources:
           - hybrisbases
+          - hybrisbases/finalizers
           verbs:
           - create
           - delete
@@ -209,6 +245,18 @@ spec:
           - image.openshift.io
           resources:
           - imagestreams
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
           verbs:
           - create
           - delete

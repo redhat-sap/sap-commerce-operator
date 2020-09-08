@@ -8,6 +8,18 @@ metadata:
   namespace: my-namespace
 rules:
 - apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - build.openshift.io
   resources:
   - buildconfigs
@@ -24,6 +36,8 @@ rules:
   - ""
   resources:
   - configmaps
+  - secrets
+  - services
   verbs:
   - create
   - delete
@@ -48,6 +62,7 @@ rules:
   - hybris.hybris.org
   resources:
   - hybrisapps
+  - hybrisapps/finalizers
   verbs:
   - create
   - delete
@@ -89,6 +104,18 @@ rules:
   - image.openshift.io
   resources:
   - imagestreams
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
   verbs:
   - create
   - delete

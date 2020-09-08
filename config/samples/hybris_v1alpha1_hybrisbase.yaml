@@ -3,5 +3,10 @@ kind: HybrisBase
 metadata:
   name: hybrisbase-sample
 spec:
-  # Add fields here
-  foo: bar
+  URL: http://nexus-xz.apps.mw-ocp4.cloud.lab.eng.bos.redhat.com/nexus/service/local/repositories/releases/content/org/hybris/hybris/0.1/hybris-0.1.tar.gz
+  imageName: hybris-base
+  imageTag: v0.1
+  jdkURL: https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm
+  password: admin123
+  username: admin
+
