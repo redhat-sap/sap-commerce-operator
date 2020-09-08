@@ -2,32 +2,31 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: controller-manager
+    control-plane: hybris-controller-manager
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: hybris-controller-manager
   namespace: system
   labels:
-    control-plane: controller-manager
+    control-plane: hybris-controller-manager
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: hybris-controller-manager
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        control-plane: hybris-controller-manager
     spec:
       containers:
       - command:
         - /manager
-        args:
-        - --enable-leader-election
-        image: hybris:latest
+        image: quay.io/xiezhang7/hybris-operator:0.1
+        imagePullPolicy: Always
         name: manager
         resources:
           limits:

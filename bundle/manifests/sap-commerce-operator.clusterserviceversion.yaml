@@ -75,17 +75,17 @@ spec:
           - create
         serviceAccountName: default
       deployments:
-      - name: sap-commerce-operator-controller-manager
+      - name: sap-commerce-operator-hybris-controller-manager
         spec:
           replicas: 1
           selector:
             matchLabels:
-              control-plane: controller-manager
+              control-plane: hybris-controller-manager
           strategy: {}
           template:
             metadata:
               labels:
-                control-plane: controller-manager
+                control-plane: hybris-controller-manager
             spec:
               containers:
               - args:
@@ -109,7 +109,8 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: hybris:latest
+                image: quay.io/xiezhang7/hybris-operator:0.1
+                imagePullPolicy: Always
                 name: manager
                 resources:
                   limits:
