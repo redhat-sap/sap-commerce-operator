@@ -101,6 +101,10 @@ func (r *HybrisBaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
+	if hybrisBase.Status.BuildConditions == nil {
+		hybrisBase.Status.BuildConditions = []hybrisv1alpha1.BuildStatusCondition{}
+	}
+
 	building, updated, err := r.updateBuildStatus(hybrisBase, ctx, log)
 
 	if updated {
@@ -387,7 +391,7 @@ func (r *HybrisBaseReconciler) updateBuildStatus(hybrisBase *hybrisv1alpha1.Hybr
 		return false, false, err
 	}
 
-	var statusConditions []hybrisv1alpha1.BuildStatusCondition
+	statusConditions := []hybrisv1alpha1.BuildStatusCondition{}
 	if len(buildList.Items) > 0 {
 		for _, build := range buildList.Items {
 			statusCondition := buildStatusCondition(build.Name, build.Status.Conditions)

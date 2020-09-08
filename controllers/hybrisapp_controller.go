@@ -105,6 +105,16 @@ func (r *HybrisAppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	if hybrisApp.Status.BuildConditions == nil {
+		hybrisApp.Status.BuildConditions = []hybrisv1alpha1.BuildStatusCondition{}
+	}
+	if hybrisApp.Status.DeploymentConfigConditions.Conditions == nil {
+		hybrisApp.Status.DeploymentConfigConditions.Conditions = []status.Condition{}
+	}
+	if hybrisApp.Status.RouteConditions == nil {
+		hybrisApp.Status.RouteConditions = []hybrisv1alpha1.RouteStatusCondition{}
+	}
+
 	built, building, updated, err := r.updateBuildStatus(hybrisApp, ctx, log)
 	if updated {
 		err = r.Status().Update(ctx, hybrisApp)
@@ -323,7 +333,6 @@ func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1a
 						URI: hybrisApp.Spec.SourceRepoURL,
 						Ref: hybrisApp.Spec.SourceRepoRef,
 					},
-					ContextDir: hybrisApp.Spec.SourceRepoContext,
 				},
 				Strategy: buildv1.BuildStrategy{
 					Type: buildv1.SourceBuildStrategyType,
@@ -345,6 +354,10 @@ func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1a
 			},
 		},
 	}
+	if len(hybrisApp.Spec.SourceRepoContext) > 0 {
+		bc.Spec.CommonSpec.Source.ContextDir = hybrisApp.Spec.SourceRepoContext
+	}
+
 	return bc
 }
 
@@ -842,7 +855,7 @@ func (r *HybrisAppReconciler) updateBuildStatus(hybrisApp *hybrisv1alpha1.Hybris
 		return false, false, false, err
 	}
 
-	var statusConditions []hybrisv1alpha1.BuildStatusCondition
+	statusConditions := []hybrisv1alpha1.BuildStatusCondition{}
 	if len(buildList.Items) > 0 {
 		for _, build := range buildList.Items {
 			statusCondition := buildStatusCondition(build.Name, build.Status.Conditions)
@@ -895,7 +908,7 @@ func (r *HybrisAppReconciler) updateDeploymentConfigStatus(hybrisApp *hybrisv1al
 }
 
 func deploymentConfigStatusCondition(dcConditions []appsv1.DeploymentCondition) *hybrisv1alpha1.DeploymentConfigStatusCondition {
-	var conditions []status.Condition
+	conditions := []status.Condition{}
 	for _, dcCondition := range dcConditions {
 		conditions = append(conditions, status.Condition{
 			Type:               status.ConditionType(dcCondition.Type),
@@ -922,7 +935,7 @@ func (r *HybrisAppReconciler) updateRouteStatus(hybrisApp *hybrisv1alpha1.Hybris
 		return false, err
 	}
 
-	var statusConditions []hybrisv1alpha1.RouteStatusCondition
+	statusConditions := []hybrisv1alpha1.RouteStatusCondition{}
 	if len(route.Status.Ingress) > 0 {
 		for _, routeStatus := range route.Status.Ingress {
 			statusCondition := routeStatusCondition(routeStatus.RouterName, routeStatus.Host, routeStatus.Conditions)

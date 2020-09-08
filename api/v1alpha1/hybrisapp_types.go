@@ -40,7 +40,6 @@ type HybrisAppSpec struct {
 	SourceRepoRef string `json:"sourceRepoRef,omitempty"`
 
 	// Hybris app repository source location
-	// +kubebuilder:validation:Required
 	SourceRepoContext string `json:"sourceRepoContext,omitempty"`
 }
 
