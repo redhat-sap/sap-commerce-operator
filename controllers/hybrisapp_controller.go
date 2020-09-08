@@ -326,6 +326,10 @@ func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1a
 						corev1.ResourceCPU:    resource.MustParse("2"),
 						corev1.ResourceMemory: resource.MustParse("4Gi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1"),
+						corev1.ResourceMemory: resource.MustParse("1Gi"),
+					},
 				},
 				Source: buildv1.BuildSource{
 					Type: buildv1.BuildSourceGit,
@@ -804,8 +808,10 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 				ReadOnly:  true,
 			})
 	} else if !licenceExists {
-		updateLicence = dc.Spec.Template.Annotations[licenceAnnotation] == ""
-		dc.Spec.Template.Annotations[licenceAnnotation] = ""
+		updateLicence = len(dc.Spec.Template.Annotations[licenceAnnotation]) > 0
+		if updateLicence {
+			dc.Spec.Template.Annotations[licenceAnnotation] = ""
+		}
 	}
 
 	if updateConfig {
@@ -836,8 +842,10 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 				MountPath: "/etc/hybris/config",
 			})
 	} else if !configExists {
-		updateConfig = dc.Spec.Template.Annotations[configAnnotation] == ""
-		dc.Spec.Template.Annotations[configAnnotation] = ""
+		updateConfig = len(dc.Spec.Template.Annotations[configAnnotation]) > 0
+		if updateConfig {
+			dc.Spec.Template.Annotations[configAnnotation] = ""
+		}
 	}
 
 	return updateLicence || updateConfig

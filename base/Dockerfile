@@ -1,7 +1,6 @@
 ## Stage 1 : download the SAP JDK and Hybris package
 FROM registry.redhat.io/ubi8/ubi:8.2 as downloader
 RUN curl -L -o /tmp/sapmachine-jdk.rpm $SAP_JDK_URL
-RUN echo $USERNAME:$PASSWORD
 RUN curl -u $USERNAME:$PASSWORD -v -k -o /tmp/hybris.tar.gz $HYBRIS_URL
 RUN tar -xzf /tmp/hybris.tar.gz -C /tmp
 
