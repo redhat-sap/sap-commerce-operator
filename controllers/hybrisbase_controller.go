@@ -45,8 +45,8 @@ import (
 )
 
 const (
-	DOCKER_FILE_REPO_URL = "https://github.com/xieshenzh/sap-commerce-operator"
-	SAP_JDK_URL          = "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm"
+	DockerFileRepoUrl = "https://github.com/xieshenzh/sap-commerce-operator"
+	SapJdkUrl         = "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm"
 )
 
 // HybrisBaseReconciler reconciles a HybrisBase object
@@ -101,40 +101,10 @@ func (r *HybrisBaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	// List the builds for Hybirs base image
-	buildList := &buildv1.BuildList{}
-	listOpts := []client.ListOption{
-		client.InNamespace(hybrisBase.Namespace),
-		client.MatchingLabels(labelsForHybrisBase(hybrisBase.Name)),
-	}
-	if err = r.List(ctx, buildList, listOpts...); err != nil {
-		log.Error(err, "Failed to list builds", "HybirsBase.Namespace", hybrisBase.Namespace, "HybirsBase.Name", hybrisBase.Name)
-		return ctrl.Result{}, err
-	}
+	building, updated, err := r.updateBuildStatus(hybrisBase, ctx, log)
 
-	building := false
-	var statusConditions []hybrisv1alpha1.BuildStatusCondition
-	if len(buildList.Items) > 0 {
-		for _, build := range buildList.Items {
-			for _, condition := range build.Status.Conditions {
-				statusConditions = append(statusConditions, *statusCondition(build.Name, &condition))
-			}
-
-			if build.Status.Phase == buildv1.BuildPhaseNew ||
-				build.Status.Phase == buildv1.BuildPhasePending ||
-				build.Status.Phase == buildv1.BuildPhaseRunning {
-				building = true
-			}
-		}
-
-		sort.SliceStable(statusConditions, func(i, j int) bool {
-			return statusConditions[i].LastTransitionTime.Before(&statusConditions[j].LastTransitionTime)
-		})
-	}
-
-	if !reflect.DeepEqual(hybrisBase.Status.BuildConditions, statusConditions) {
-		hybrisBase.Status.BuildConditions = statusConditions
-		err := r.Status().Update(ctx, hybrisBase)
+	if updated {
+		err = r.Status().Update(ctx, hybrisBase)
 		if err != nil {
 			log.Error(err, "Failed to update HybrisBase status")
 			return ctrl.Result{}, err
@@ -349,7 +319,7 @@ func (r *HybrisBaseReconciler) createBuildConfigForHybrisBase(hybrisBase *hybris
 				Source: buildv1.BuildSource{
 					Type: buildv1.BuildSourceGit,
 					Git: &buildv1.GitBuildSource{
-						URI: DOCKER_FILE_REPO_URL,
+						URI: DockerFileRepoUrl,
 						Ref: "master",
 					},
 					ContextDir: "base",
@@ -405,6 +375,43 @@ func (r *HybrisBaseReconciler) createBuildConfigForHybrisBase(hybrisBase *hybris
 	return bc
 }
 
+func (r *HybrisBaseReconciler) updateBuildStatus(hybrisBase *hybrisv1alpha1.HybrisBase, ctx context.Context, log logr.Logger) (building bool, updated bool, err error) {
+	// List the builds for Hybirs base image
+	buildList := &buildv1.BuildList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(hybrisBase.Namespace),
+		client.MatchingLabels(labelsForHybrisBase(hybrisBase.Name)),
+	}
+	if err := r.List(ctx, buildList, listOpts...); err != nil {
+		log.Error(err, "Failed to list builds", "HybirsBase.Namespace", hybrisBase.Namespace, "HybirsBase.Name", hybrisBase.Name)
+		return false, false, err
+	}
+
+	var statusConditions []hybrisv1alpha1.BuildStatusCondition
+	if len(buildList.Items) > 0 {
+		for _, build := range buildList.Items {
+			statusCondition := buildStatusCondition(build.Name, build.Status.Conditions)
+			sort.SliceStable(statusCondition.Conditions, func(i, j int) bool {
+				return statusCondition.Conditions[i].LastTransitionTime.Before(&statusCondition.Conditions[j].LastTransitionTime)
+			})
+
+			if build.Status.Phase == buildv1.BuildPhaseNew ||
+				build.Status.Phase == buildv1.BuildPhasePending ||
+				build.Status.Phase == buildv1.BuildPhaseRunning {
+				building = true
+			}
+
+			statusConditions = append(statusConditions, *statusCondition)
+		}
+	}
+
+	if !reflect.DeepEqual(hybrisBase.Status.BuildConditions, statusConditions) {
+		hybrisBase.Status.BuildConditions = statusConditions
+		return false, true, nil
+	}
+	return building, false, nil
+}
+
 func imageStreamNameTag(hybrisBase *hybrisv1alpha1.HybrisBase) (string, string) {
 	name := hybrisBase.Name
 	if len(hybrisBase.Spec.ImageName) > 0 {
@@ -418,7 +425,7 @@ func imageStreamNameTag(hybrisBase *hybrisv1alpha1.HybrisBase) (string, string) 
 }
 
 func jdkURL(hybrisBase *hybrisv1alpha1.HybrisBase) string {
-	jdkURL := SAP_JDK_URL
+	jdkURL := SapJdkUrl
 	if len(hybrisBase.Spec.JdkURL) > 0 {
 		jdkURL = hybrisBase.Spec.JdkURL
 	}
@@ -447,16 +454,21 @@ func replaceEnvValue(name string, value string, array []corev1.EnvVar) []corev1.
 	})
 }
 
-func statusCondition(buildName string, buildCondition *buildv1.BuildCondition) *hybrisv1alpha1.BuildStatusCondition {
-	return &hybrisv1alpha1.BuildStatusCondition{
-		BuildName: buildName,
-		Condition: status.Condition{
+func buildStatusCondition(buildName string, buildConditions []buildv1.BuildCondition) *hybrisv1alpha1.BuildStatusCondition {
+	var conditions []status.Condition
+	for _, buildCondition := range buildConditions {
+		conditions = append(conditions, status.Condition{
 			Type:               status.ConditionType(buildCondition.Type),
 			Status:             buildCondition.Status,
 			Reason:             status.ConditionReason(buildCondition.Reason),
 			Message:            buildCondition.Message,
 			LastTransitionTime: buildCondition.LastTransitionTime,
-		},
+		})
+	}
+
+	return &hybrisv1alpha1.BuildStatusCondition{
+		BuildName:  buildName,
+		Conditions: conditions,
 	}
 }
 

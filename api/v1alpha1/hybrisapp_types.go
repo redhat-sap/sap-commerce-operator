@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/operator-framework/operator-lib/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -43,9 +44,29 @@ type HybrisAppSpec struct {
 	SourceRepoContext string `json:"sourceRepoContext,omitempty"`
 }
 
+type DeploymentConfigStatusCondition struct {
+	// Conditions of the deploymentConfig for the Hybris app
+	Conditions []status.Condition `json:"conditions"`
+}
+
+type RouteStatusCondition struct {
+	// Name of the route for the Hybris app
+	RouteName string `json:"routeName"`
+
+	// Host of the route for the Hybris app
+	Host string `json:"host"`
+
+	// Conditions of the route for the Hybris app
+	Conditions []status.Condition `json:"conditions"`
+}
+
 // HybrisAppStatus defines the observed state of HybrisApp
 type HybrisAppStatus struct {
 	BuildConditions []BuildStatusCondition `json:"buildConditions"`
+
+	DeploymentConfigConditions DeploymentConfigStatusCondition `json:"deploymentConfigConditions"`
+
+	RouteConditions []RouteStatusCondition `json:"routeConditions"`
 }
 
 // +kubebuilder:object:root=true

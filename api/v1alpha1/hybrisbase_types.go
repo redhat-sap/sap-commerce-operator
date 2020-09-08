@@ -50,7 +50,7 @@ type BuildStatusCondition struct {
 	// Name of the build for the Hybris base image
 	BuildName string `json:"buildName"`
 
-	status.Condition `json:",inline"`
+	Conditions []status.Condition `json:"conditions"`
 }
 
 // HybrisBaseStatus defines the observed state of HybrisBase
