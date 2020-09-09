@@ -55,6 +55,9 @@ const (
 
 	licenceAnnotation = "licenceHash"
 	configAnnotation  = "configHash"
+
+	licenceVolume = "hybris-licence"
+	configVolume  = "hybris-config"
 )
 
 // HybrisAppReconciler reconciles a HybrisApp object
@@ -747,14 +750,14 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 
 	if updateLicence || !licenceExists {
 		for i, v := range dc.Spec.Template.Spec.Volumes {
-			if v.Name == "HybrisLicence" {
+			if v.Name == licenceVolume {
 				dc.Spec.Template.Spec.Volumes[i] = dc.Spec.Template.Spec.Volumes[len(dc.Spec.Template.Spec.Volumes)-1]
 				dc.Spec.Template.Spec.Volumes = dc.Spec.Template.Spec.Volumes[:len(dc.Spec.Template.Spec.Volumes)-1]
 				break
 			}
 		}
 		for i, v := range dc.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if v.Name == "HybrisLicence" {
+			if v.Name == licenceVolume {
 				dc.Spec.Template.Spec.Containers[0].VolumeMounts[i] = dc.Spec.Template.Spec.Containers[0].VolumeMounts[len(dc.Spec.Template.Spec.Containers[0].VolumeMounts)-1]
 				dc.Spec.Template.Spec.Containers[0].VolumeMounts = dc.Spec.Template.Spec.Containers[0].VolumeMounts[:len(dc.Spec.Template.Spec.Containers[0].VolumeMounts)-1]
 				break
@@ -764,14 +767,14 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 
 	if updateConfig || !configExists {
 		for i, v := range dc.Spec.Template.Spec.Volumes {
-			if v.Name == "HybrisConfig" {
+			if v.Name == configVolume {
 				dc.Spec.Template.Spec.Volumes[i] = dc.Spec.Template.Spec.Volumes[len(dc.Spec.Template.Spec.Volumes)-1]
 				dc.Spec.Template.Spec.Volumes = dc.Spec.Template.Spec.Volumes[:len(dc.Spec.Template.Spec.Volumes)-1]
 				break
 			}
 		}
 		for i, v := range dc.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if v.Name == "HybrisConfig" {
+			if v.Name == configVolume {
 				dc.Spec.Template.Spec.Containers[0].VolumeMounts[i] = dc.Spec.Template.Spec.Containers[0].VolumeMounts[len(dc.Spec.Template.Spec.Containers[0].VolumeMounts)-1]
 				dc.Spec.Template.Spec.Containers[0].VolumeMounts = dc.Spec.Template.Spec.Containers[0].VolumeMounts[:len(dc.Spec.Template.Spec.Containers[0].VolumeMounts)-1]
 				break
@@ -786,7 +789,7 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 
 		dc.Spec.Template.Spec.Volumes = append(dc.Spec.Template.Spec.Volumes,
 			corev1.Volume{
-				Name: "HybrisLicence",
+				Name: licenceVolume,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  hybrisApp.Name,
@@ -803,7 +806,7 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 
 		dc.Spec.Template.Spec.Containers[0].VolumeMounts = append(dc.Spec.Template.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{
-				Name:      "HybrisLicence",
+				Name:      licenceVolume,
 				MountPath: "/etc/hybris/licence",
 				ReadOnly:  true,
 			})
@@ -819,7 +822,7 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 
 		dc.Spec.Template.Spec.Volumes = append(dc.Spec.Template.Spec.Volumes,
 			corev1.Volume{
-				Name: "HybrisConfig",
+				Name: configVolume,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -838,7 +841,7 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 
 		dc.Spec.Template.Spec.Containers[0].VolumeMounts = append(dc.Spec.Template.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{
-				Name:      "HybrisConfig",
+				Name:      configVolume,
 				MountPath: "/etc/hybris/config",
 			})
 	} else if !configExists {
