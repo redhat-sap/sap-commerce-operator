@@ -11,10 +11,10 @@ metadata:
             "name": "hybrisapp-sample"
           },
           "spec": {
-            "baseImageName": "base",
-            "baseImageTag": "latest",
+            "baseImageName": "hybris-base",
+            "baseImageTag": "v0.1",
             "sourceRepoRef": "master",
-            "sourceRepoURL": "https://github.com/xieshenzh/sap-commerce-app-example.git"
+            "sourceRepoURL": "https://github.com/redhat-sap/sap-commerce-app-example.git"
           }
         },
         {
@@ -24,7 +24,7 @@ metadata:
             "name": "hybrisbase-sample"
           },
           "spec": {
-            "URL": "http://nexus-xz.apps.mw-ocp4.cloud.lab.eng.bos.redhat.com/nexus/service/local/repositories/releases/content/org/hybris/hybris/0.1/hybris-0.1.tar.gz",
+            "URL": "http://nexus.redhat.com/nexus/service/local/repositories/releases/content/org/hybris/hybris/1.0/hybris-1.0.tar.gz",
             "imageName": "hybris-base",
             "imageTag": "v0.1",
             "jdkURL": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm",
@@ -109,7 +109,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: quay.io/xiezhang7/hybris-operator:0.1
+                image: quay.io/redhat-sap/hybris-operator:0.1
                 imagePullPolicy: Always
                 name: manager
                 resources:

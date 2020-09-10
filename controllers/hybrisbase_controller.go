@@ -45,7 +45,7 @@ import (
 )
 
 const (
-	DockerFileRepoUrl = "https://github.com/xieshenzh/sap-commerce-operator"
+	DockerFileRepoUrl = "https://github.com/redhat-sap/sap-commerce-operator"
 	SapJdkUrl         = "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm"
 )
 

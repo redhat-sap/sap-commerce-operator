@@ -6,5 +6,5 @@ spec:
   baseImageName: hybris-base
   baseImageTag: v0.1
   sourceRepoRef: master
-  sourceRepoURL: https://github.com/xieshenzh/sap-commerce-app-example.git
+  sourceRepoURL: https://github.com/redhat-sap/sap-commerce-app-example.git
 
