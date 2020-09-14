@@ -109,8 +109,8 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: quay.io/redhat-sap/hybris-operator:0.1
-                imagePullPolicy: Always
+                image: quay.io/redhat-sap-cop/hybris-operator:0.1
+                imagePullPolicy: IfNotPresent
                 name: manager
                 resources:
                   limits:
