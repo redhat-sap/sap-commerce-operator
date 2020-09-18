@@ -5,7 +5,7 @@ SAP_COMMERCE_ZIP=$1
 HYBRIS_PACKAGE_DIR="hybris-package"
 HYBRIS_PACKAGE="hybris.tar.gz"
 
-trap "rm -rf $HYBRIS_PACKAGE_DIR && rm -f $HYBRIS_PACKAGE" EXIT
+trap "rm -rf $HYBRIS_PACKAGE_DIR" EXIT
 
 echo "#####  Extracting hybris from SAP Commerce  #####"
 unzip -q $SAP_COMMERCE_ZIP -d $HYBRIS_PACKAGE_DIR
