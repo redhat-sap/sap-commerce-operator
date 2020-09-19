@@ -6,6 +6,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      OPERATOR_IMAGE: quay.io/redhat-sap-cop/hybris-operator
+      OPERATOR_TAG: 0.1
+      BUNDLE_IMAGE: quay.io/redhat-sap-cop/hybris-bundle
+      BUNDLE_TAG: 0.1
+      INDEX_IMAGE: quay.io/redhat-sap-cop/hybris-index
+      INDEX_TAG: 0.1
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -20,22 +27,36 @@ jobs:
           version: latest
       - uses: actions/checkout@v2
       - name: Install Kubebuilder
+        env:
+          RELEASE_VERSION: 2.3.1
         run: |
           os=$(go env GOOS)
           arch=$(go env GOARCH)
-          curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
-          sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
+          curl -L https://go.kubebuilder.io/dl/${RELEASE_VERSION}/${os}/${arch} | tar -xz -C /tmp/
+          sudo mv /tmp/kubebuilder_${RELEASE_VERSION}_${os}_${arch} /usr/local/kubebuilder
       - name: Install Operator SDK
         env:
           RELEASE_VERSION: v1.0.0
         run: |
           curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
           chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
-      - name: Build and Push
+      - name: Install OPM
         env:
-          IMAGE: quay.io/redhat-sap-cop/hybris-operator
-          TAG: 0.1
+          RELEASE_VERSION: v1.13.8
+        run: |
+          curl -LO https://github.com/operator-framework/operator-registry/releases/download/${RELEASE_VERSION}/linux-amd64-opm
+          chmod +x linux-amd64-opm && sudo mkdir -p /usr/local/bin/ && sudo cp linux-amd64-opm /usr/local/bin/opm && rm linux-amd64-opm
+      - name: Build and Push Operator
         run: |
           export PATH=$PATH:/usr/local/kubebuilder/bin
-          make docker-build docker-push IMG=${IMAGE}:${TAG} 
+          make docker-build docker-push IMG=${OPERATOR_IMAGE}:${OPERATOR_TAG}
+      - name: Build and Push Bundle
+        run: |
+          make bundle
+          docker build -t ${BUNDLE_IMAGE}:${BUNDLE_TAG} -f bundle.Dockerfile .
+          docker push ${BUNDLE_IMAGE}:${BUNDLE_TAG}
+      - name: Build and Push Index
+        run: |
+          opm index add --bundles ${BUNDLE_IMAGE}:${BUNDLE_TAG} --tag ${INDEX_IMAGE}:${INDEX_TAG} --container-tool docker
+          docker push ${INDEX_IMAGE}:${INDEX_TAG}
       
