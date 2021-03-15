@@ -258,7 +258,7 @@ func (r *HybrisAppReconciler) ensureBuildConfig(hybrisApp *hybrisv1alpha1.Hybris
 	err = r.Get(ctx, types.NamespacedName{Name: hybrisApp.Name, Namespace: hybrisApp.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		bc := r.createBuildConfigForHybrisApp(hybrisApp)
+		bc := createBuildConfigForHybrisApp(hybrisApp)
 		// Set HybrisApp instance as the owner and controller
 		err = ctrl.SetControllerReference(hybrisApp, bc, r.Scheme)
 		if err != nil {
@@ -309,7 +309,7 @@ func (r *HybrisAppReconciler) ensureBuildConfig(hybrisApp *hybrisv1alpha1.Hybris
 }
 
 // createBuildConfigForHybrisApp returns a BuildConfig object for building the Hybris app image
-func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1alpha1.HybrisApp) *buildv1.BuildConfig {
+func createBuildConfigForHybrisApp(hybrisApp *hybrisv1alpha1.HybrisApp) *buildv1.BuildConfig {
 	bc := &buildv1.BuildConfig{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      hybrisApp.Name,
@@ -456,31 +456,7 @@ func (r *HybrisAppReconciler) ensureService(hybrisApp *hybrisv1alpha1.HybrisApp,
 	err = r.Get(ctx, types.NamespacedName{Name: hybrisApp.Name, Namespace: hybrisApp.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Service
-		service := &corev1.Service{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      hybrisApp.Name,
-				Namespace: hybrisApp.Namespace,
-				Labels:    labelsForHybrisApp(hybrisApp.Name),
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{
-					{
-						Name:       "9001-tcp",
-						Port:       9001,
-						TargetPort: intstr.FromInt(9001),
-						Protocol:   corev1.ProtocolTCP,
-					},
-					{
-						Name:       "9002-tcp",
-						Port:       9002,
-						TargetPort: intstr.FromInt(9002),
-						Protocol:   corev1.ProtocolTCP,
-					},
-				},
-				Selector: labelsForHybrisApp(hybrisApp.Name),
-				Type:     corev1.ServiceTypeClusterIP,
-			},
-		}
+		service := createServiceForHybrisApp(hybrisApp)
 		// Set HybrisApp instance as the owner and controller
 		err = ctrl.SetControllerReference(hybrisApp, service, r.Scheme)
 		if err != nil {
@@ -504,6 +480,17 @@ func (r *HybrisAppReconciler) ensureService(hybrisApp *hybrisv1alpha1.HybrisApp,
 	} else if err != nil {
 		log.Error(err, "Failed to get Service")
 		return false, err
+	}
+
+	if ensureServicePort(hybrisApp, found) {
+		err = r.Update(ctx, found)
+		if err != nil {
+			log.Error(err, "Failed to update Service", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+			return false, err
+		}
+		// Spec updated - return and requeue
+		log.Info("Service updated", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+		return true, nil
 	}
 
 	return false, nil
@@ -583,7 +570,7 @@ func (r *HybrisAppReconciler) ensureDeploymentConfig(hybrisApp *hybrisv1alpha1.H
 	err = r.Get(ctx, types.NamespacedName{Name: hybrisApp.Name, Namespace: hybrisApp.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new DeploymentConfig
-		dc := r.createDeploymentConfigForHybrisApp(hybrisApp, foundSecret, foundCM)
+		dc := createDeploymentConfigForHybrisApp(hybrisApp, foundSecret, foundCM)
 		// Set HybrisApp instance as the owner and controller
 		err = ctrl.SetControllerReference(hybrisApp, dc, r.Scheme)
 		if err != nil {
@@ -609,7 +596,7 @@ func (r *HybrisAppReconciler) ensureDeploymentConfig(hybrisApp *hybrisv1alpha1.H
 		return false, err
 	}
 
-	if ensureDeploymentConfigVolumes(hybrisApp, found, foundSecret, foundCM) {
+	if ensureDeploymentConfigVolumes(hybrisApp, found, foundSecret, foundCM) || ensureDeploymentPort(hybrisApp, found) {
 		err = r.Update(ctx, found)
 		if err != nil {
 			log.Error(err, "Failed to update DeploymentConfig", "DeploymentConfig.Namespace", found.Namespace, "DeploymentConfig.Name", found.Name)
@@ -623,8 +610,8 @@ func (r *HybrisAppReconciler) ensureDeploymentConfig(hybrisApp *hybrisv1alpha1.H
 	return false, nil
 }
 
-// createDeploymentConfigForHybrisApp returns a BuildConfig object for building the Hybris app image
-func (r *HybrisAppReconciler) createDeploymentConfigForHybrisApp(hybrisApp *hybrisv1alpha1.HybrisApp, secret *corev1.Secret, cm *corev1.ConfigMap) *appsv1.DeploymentConfig {
+// createDeploymentConfigForHybrisApp returns a DeploymentConfig object for the Hybris app
+func createDeploymentConfigForHybrisApp(hybrisApp *hybrisv1alpha1.HybrisApp, secret *corev1.Secret, cm *corev1.ConfigMap) *appsv1.DeploymentConfig {
 	activeDeadlineSeconds := int64(21600)
 	intervalSeconds := int64(1)
 	maxSurge := intstr.FromString("25%")
@@ -712,7 +699,38 @@ func (r *HybrisAppReconciler) createDeploymentConfigForHybrisApp(hybrisApp *hybr
 		},
 	}
 	_ = ensureDeploymentConfigVolumes(hybrisApp, dc, secret, cm)
+	_ = ensureDeploymentPort(hybrisApp, dc)
 	return dc
+}
+
+func createServiceForHybrisApp(hybrisApp *hybrisv1alpha1.HybrisApp) *corev1.Service {
+	service := &corev1.Service{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      hybrisApp.Name,
+			Namespace: hybrisApp.Namespace,
+			Labels:    labelsForHybrisApp(hybrisApp.Name),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "9001-tcp",
+					Port:       9001,
+					TargetPort: intstr.FromInt(9001),
+					Protocol:   corev1.ProtocolTCP,
+				},
+				{
+					Name:       "9002-tcp",
+					Port:       9002,
+					TargetPort: intstr.FromInt(9002),
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
+			Selector: labelsForHybrisApp(hybrisApp.Name),
+			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+	_ = ensureServicePort(hybrisApp, service)
+	return service
 }
 
 func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *appsv1.DeploymentConfig, secret *corev1.Secret, cm *corev1.ConfigMap) bool {
@@ -852,6 +870,81 @@ func ensureDeploymentConfigVolumes(hybrisApp *hybrisv1alpha1.HybrisApp, dc *apps
 	}
 
 	return updateLicence || updateConfig
+}
+
+func ensureDeploymentPort(hybrisApp *hybrisv1alpha1.HybrisApp, dc *appsv1.DeploymentConfig) bool {
+	index := -1
+	for i, p := range dc.Spec.Template.Spec.Containers[0].Ports {
+		if p.Protocol == corev1.ProtocolUDP {
+			index = i
+			break
+		}
+	}
+
+	if index < 0 && hybrisApp.Spec.UDPPort == nil {
+		return false
+	}
+
+	if index > 0 && hybrisApp.Spec.UDPPort == nil {
+		l := len(dc.Spec.Template.Spec.Containers[0].Ports)
+		dc.Spec.Template.Spec.Containers[0].Ports[index] = dc.Spec.Template.Spec.Containers[0].Ports[l-1]
+		dc.Spec.Template.Spec.Containers[0].Ports = dc.Spec.Template.Spec.Containers[0].Ports[:l-1]
+		return true
+	}
+
+	if index < 0 && hybrisApp.Spec.UDPPort != nil {
+		dc.Spec.Template.Spec.Containers[0].Ports = append(dc.Spec.Template.Spec.Containers[0].Ports, corev1.ContainerPort{
+			ContainerPort: *hybrisApp.Spec.UDPPort,
+			Protocol:      corev1.ProtocolUDP,
+		})
+		return true
+	}
+
+	if dc.Spec.Template.Spec.Containers[0].Ports[index].ContainerPort != *hybrisApp.Spec.UDPPort {
+		dc.Spec.Template.Spec.Containers[0].Ports[index].ContainerPort = *hybrisApp.Spec.UDPPort
+		return true
+	}
+
+	return false
+}
+
+func ensureServicePort(hybrisApp *hybrisv1alpha1.HybrisApp, service *corev1.Service) bool {
+	index := -1
+	for i, p := range service.Spec.Ports {
+		if p.Protocol == corev1.ProtocolUDP {
+			index = i
+			break
+		}
+	}
+
+	if index < 0 && hybrisApp.Spec.UDPPort == nil {
+		return false
+	}
+
+	if index > 0 && hybrisApp.Spec.UDPPort == nil {
+		l := len(service.Spec.Ports)
+		service.Spec.Ports[index] = service.Spec.Ports[l-1]
+		service.Spec.Ports = service.Spec.Ports[:l-1]
+		return true
+	}
+
+	if index < 0 && hybrisApp.Spec.UDPPort != nil {
+		service.Spec.Ports = append(service.Spec.Ports, corev1.ServicePort{
+			Name:       "udp",
+			Port:       *hybrisApp.Spec.UDPPort,
+			TargetPort: intstr.FromInt(int(*hybrisApp.Spec.UDPPort)),
+			Protocol:   corev1.ProtocolUDP,
+		})
+		return true
+	}
+
+	if service.Spec.Ports[index].Port != *hybrisApp.Spec.UDPPort {
+		service.Spec.Ports[index].Port = *hybrisApp.Spec.UDPPort
+		service.Spec.Ports[index].TargetPort = intstr.FromInt(int(*hybrisApp.Spec.UDPPort))
+		return true
+	}
+
+	return false
 }
 
 func (r *HybrisAppReconciler) updateBuildStatus(hybrisApp *hybrisv1alpha1.HybrisApp, ctx context.Context, log logr.Logger) (built bool, building bool, updated bool, err error) {

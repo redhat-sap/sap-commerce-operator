@@ -99,6 +99,8 @@ This operator manages the process for building and deploying the SAP Commerce ap
         4. sourceRepoRef: a tag or branch of your Hybris application source code
          
         5. sourceRepoContext: an optional subdirectory of your source code for your Hybris application
+        
+        6. UDPPort: an optional UDP port to support multicast
        <img src="images/hybrisapp-create.png" width="1080">
     
     4. A `Build` will be created to build the Hybris app image

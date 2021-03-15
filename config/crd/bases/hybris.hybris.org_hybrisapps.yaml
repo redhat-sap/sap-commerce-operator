@@ -36,6 +36,10 @@ spec:
         spec:
           description: HybrisAppSpec defines the desired state of HybrisApp
           properties:
+            UDPPort:
+              description: Hybris app UDP port for multicast
+              format: int32
+              type: integer
             baseImageName:
               description: Hybris base image name
               type: string

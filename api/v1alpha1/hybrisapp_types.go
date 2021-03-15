@@ -41,6 +41,9 @@ type HybrisAppSpec struct {
 
 	// Hybris app repository source location
 	SourceRepoContext string `json:"sourceRepoContext,omitempty"`
+
+	// Hybris app UDP port for multicast
+	UDPPort *int32 `json:"UDPPort,omitempty"`
 }
 
 type DeploymentConfigStatusCondition struct {
