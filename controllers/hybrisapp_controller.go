@@ -259,6 +259,7 @@ func (r *HybrisAppReconciler) ensureBuildConfig(hybrisApp *hybrisv1alpha1.Hybris
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		bc := r.createBuildConfigForHybrisApp(hybrisApp)
+		//log.Info("----> BuildConfig", "bc.Spec.Strategy.SourceStrategy.Env", bc.Spec.Strategy.SourceStrategy.Env)
 		// Set HybrisApp instance as the owner and controller
 		err = ctrl.SetControllerReference(hybrisApp, bc, r.Scheme)
 		if err != nil {
@@ -344,9 +345,11 @@ func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1a
 				Strategy: buildv1.BuildStrategy{
 					Type: buildv1.SourceBuildStrategyType,
 					SourceStrategy: &buildv1.SourceBuildStrategy{
-						From: corev1.ObjectReference{
-							Kind: "ImageStreamTag",
-							Name: strings.Join([]string{hybrisApp.Spec.BaseImageName, hybrisApp.Spec.BaseImageTag}, ":"),
+						From: corev1.ObjectReference{Kind: "ImageStreamTag", Name: strings.Join([]string{hybrisApp.Spec.BaseImageName, hybrisApp.Spec.BaseImageTag}, ":")},
+						Env: []corev1.EnvVar{
+							{Name: "SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE", Value: hybrisApp.Spec.SourceRepoLocalPorpertiesOverride},
+							{Name: "APACHE_JVM_ROUTE_NAME", Value: hybrisApp.Spec.ApachejvmRouteName},
+							{Name: "HYBRIS_ANT_TASK_NAMES", Value: hybrisApp.Spec.HybrisANTTaskNames},
 						},
 					},
 				},

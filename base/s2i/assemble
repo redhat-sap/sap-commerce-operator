@@ -3,11 +3,17 @@
 # Setup Environment Variables
 LOCAL_SOURCE_DIR="${LOCAL_SOURCE_DIR:-/tmp/src}"
 HYBRIS_HOME="${HYBRIS_HOME:-/opt/hybris}"
+HYBRIS_PLATFORM_FOLDER="${HYBRIS_PLATFORM_FOLDER:-hybris/bin/platform}"
 HYBRIS_SOURCE_FOLDER="${HYBRIS_SOURCE_DIR:-hybris}"
+HYBRIS_LOCAL_PROPERTIES_PATH="${HYBRIS_LOCAL_PROPERTIES_PATH-hybris/config/local.properties}"
+HYBRIS_SERVER_XML_PATH="${HYBRIS_SERVER_XML_PATH-hybris/config/tomcat/conf/server.xml}"
 HYBRIS_CONTENT_DIR="${LOCAL_SOURCE_DIR}/${HYBRIS_SOURCE_FOLDER}"
 ANT_BUILD_TASKS="${ANT_TASKS:-clean all}"
 ANT_DEPLOY_TASKS="${ANT_TASKS:-deploy}"
 ANT_INITIALIZE_TASKS="${ANT_TASKS:-initialize}"
+SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE="${SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE}"
+APACHE_JVM_ROUTE_NAME="${APACHE_JVM_ROUTE_NAME}"
+HYBRIS_ANT_TASK_NAMES="${HYBRIS_ANT_TASK_NAMES}"
 
 if [ ! -d "${HYBRIS_CONTENT_DIR}" ]; then
     echo "Could Not Locate Hybris Directory in Source!"
@@ -15,8 +21,27 @@ if [ ! -d "${HYBRIS_CONTENT_DIR}" ]; then
 fi
 
 # Copying Source to Hybris Server
-echo "---> Copying Hybris application source ..."
-cp -r ${HYBRIS_CONTENT_DIR}/* "${HYBRIS_HOME}"
+echo "---> Copying Hybris application source cp -r ${HYBRIS_CONTENT_DIR}/* ${HYBRIS_HOME}/hybris"
+cp -r ${HYBRIS_CONTENT_DIR}/* ${HYBRIS_HOME}/hybris
+
+#####Below section unitl the commented lines added on April 5 2021 for the Hybris Operator changes
+
+if [ ! -z "${SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE}" ]; then
+    echo "---> Hybris config  ${HYBRIS_HOME}/${HYBRIS_LOCAL_PROPERTIES_PATH} is replaced by ${SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE}"
+    curl -k -o ${HYBRIS_HOME}/${HYBRIS_LOCAL_PROPERTIES_PATH} ${SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE}
+    #echo "---> Hybris config replacement complete"
+    #ls -la ${HYBRIS_HOME}/${HYBRIS_LOCAL_PROPERTIES_PATH} 
+else
+    echo "---> Hybris config ${HYBRIS_HOME}/${HYBRIS_LOCAL_PROPERTIES_PATH} present in the source repo will be used as is"
+fi
+
+if [ ! -z "${APACHE_JVM_ROUTE_NAME}" ]; then
+    echo "---> Apache config  ${HYBRIS_HOME}/${HYBRIS_SERVER_XML_PATH} modified for jvmRoute with a value of 'ChangeMe' to '${APACHE_JVM_ROUTE_NAME}'"
+    sed -i s/ChangeMe/"${APACHE_JVM_ROUTE_NAME}"/g ${HYBRIS_HOME}/${HYBRIS_SERVER_XML_PATH}
+    #echo "---> Apache config modification complete"
+else
+    echo "---> Apache config ${HYBRIS_HOME}/${HYBRIS_SERVER_XML_PATH}present in the source repo will be used as is"
+fi
 
 # Removing Hybris Source
 rm -rf "${HYBRIS_CONTENT_DIR}"
@@ -24,40 +49,60 @@ rm -rf "${HYBRIS_CONTENT_DIR}"
 
 # Build Hybris Server
 echo "---> Building SAP Commerce ..."
-cd "${HYBRIS_HOME}/bin/platform/"
+cd ${HYBRIS_HOME}/${HYBRIS_PLATFORM_FOLDER}
 . ./setantenv.sh
-ant ${ANT_BUILD_TASKS}
 
-if [ $? -ne 0 ]; then
-    echo
-    echo "SAP Commerce Build Failed!"
-    exit 1
+if [ ! -z "${HYBRIS_ANT_TASK_NAMES}" ]; then
+    echo "---> All Hybris ANT tasks execution started for ${HYBRIS_ANT_TASK_NAMES}"
+    IFS=","
+    for v in ${HYBRIS_ANT_TASK_NAMES}
+    do
+        echo "---> Executing >ant $v..."
+        ant "$v"
+    done
+    echo "---> All Hybris ANT tasks execution completed for ${HYBRIS_ANT_TASK_NAMES}"
+else
+    echo "---> No Hybris ANT tasks to execute ${HYBRIS_ANT_TASK_NAMES}"
 fi
 
 echo
-echo "SAP Commerce Build Successful!"
+echo "---> SAP Commerce Build Successful!"
 
-ant ${ANT_DEPLOY_TASKS}
+#####Commented  out on April 5 2021 for the Hybris Operator changes to include customized ANT execution
 
-if [ $? -ne 0 ]; then
-    echo
-    echo "SAP Commerce Deploy Failed!"
-    exit 1
-fi
+#echo "---> Executing >ant ${ANT_BUILD_TASKS} ..."
+#ant ${ANT_BUILD_TASKS}
 
-ant ${ANT_INITIALIZE_TASKS}
+#if [ $? -ne 0 ]; then
+#    echo
+#    echo "SAP Commerce Build Failed!"
+#    exit 1
+#fi
 
-if [ $? -ne 0 ]; then
-    echo
-    echo "SAP Commerce Initializing Failed!"
-    exit 1
-fi
-echo
-echo "---> Fixing Permissions ..."
+
+#echo "---> Executing >ant ${ANT_DEPLOY_TASKS} ..."
+#ant ${ANT_DEPLOY_TASKS}
+
+#if [ $? -ne 0 ]; then
+#    echo
+#    echo "SAP Commerce Deploy Failed!"
+#    exit 1
+#fi
+
+#echo "---> Executing >ant ${ANT_INITIALIZE_TASKS} ..."
+#ant ${ANT_INITIALIZE_TASKS}
+
+#if [ $? -ne 0 ]; then
+#    echo
+#    echo "SAP Commerce Initializing Failed!"
+#    exit 1
+#fi
+#echo
+#echo "---> Fixing Permissions ..."
 
 chmod -R u+rwx ${HYBRIS_HOME}
 chmod -R g+rwx ${HYBRIS_HOME}
-chown -R 1001:root ${HYBRIS_HOME}
+#chown -R 1001:root ${HYBRIS_HOME}
 
 echo "---> Cleaning Source Directory ..."
 rm -rf "${LOCAL_SOURCE_DIR}"
