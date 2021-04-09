@@ -3,10 +3,10 @@
 # Setup Environment Variables
 LOCAL_SOURCE_DIR="${LOCAL_SOURCE_DIR:-/tmp/src}"
 HYBRIS_HOME="${HYBRIS_HOME:-/opt/hybris}"
-HYBRIS_PLATFORM_FOLDER="${HYBRIS_PLATFORM_FOLDER:-hybris/bin/platform}"
+HYBRIS_PLATFORM_FOLDER="${HYBRIS_PLATFORM_FOLDER:-bin/platform}"
 HYBRIS_SOURCE_FOLDER="${HYBRIS_SOURCE_DIR:-hybris}"
-HYBRIS_LOCAL_PROPERTIES_PATH="${HYBRIS_LOCAL_PROPERTIES_PATH-hybris/config/local.properties}"
-HYBRIS_SERVER_XML_PATH="${HYBRIS_SERVER_XML_PATH-hybris/config/tomcat/conf/server.xml}"
+HYBRIS_LOCAL_PROPERTIES_PATH="${HYBRIS_LOCAL_PROPERTIES_PATH-config/local.properties}"
+HYBRIS_SERVER_XML_PATH="${HYBRIS_SERVER_XML_PATH-config/tomcat/conf/server.xml}"
 HYBRIS_CONTENT_DIR="${LOCAL_SOURCE_DIR}/${HYBRIS_SOURCE_FOLDER}"
 ANT_BUILD_TASKS="${ANT_TASKS:-clean all}"
 ANT_DEPLOY_TASKS="${ANT_TASKS:-deploy}"
@@ -21,8 +21,8 @@ if [ ! -d "${HYBRIS_CONTENT_DIR}" ]; then
 fi
 
 # Copying Source to Hybris Server
-echo "---> Copying Hybris application source cp -r ${HYBRIS_CONTENT_DIR}/* ${HYBRIS_HOME}/hybris"
-cp -r ${HYBRIS_CONTENT_DIR}/* ${HYBRIS_HOME}/hybris
+echo "---> Copying Hybris application source cp -r ${HYBRIS_CONTENT_DIR}/* ${HYBRIS_HOME}"
+cp -r ${HYBRIS_CONTENT_DIR}/* ${HYBRIS_HOME}
 
 #####Below section unitl the commented lines added on April 5 2021 for the Hybris Operator changes
 
