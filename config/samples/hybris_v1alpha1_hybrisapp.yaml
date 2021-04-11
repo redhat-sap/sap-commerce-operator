@@ -3,11 +3,14 @@ kind: HybrisApp
 metadata:
   name: hybrisapp-sample
 spec:
-  baseImageName: hybris-base-for-testing
-  baseImageTag: v0.1
+  baseImageName: hybris-base
+  baseImageTag: v0.2
   sourceRepoRef: master
   sourceRepoURL: https://github.com/faizalak/sap-commerce-app-example.git
+  #sourceRepoLocalPropertiesOverride: ''
+  #apachejvmRouteName: ''
+  #hybrisANTTaskNames: ''
   sourceRepoLocalPropertiesOverride: https://raw.githubusercontent.com/faizalak/sap-commerce-app-example/master/hybris/config/local.properties.qa1
   apachejvmRouteName: qaapp1
-  hybrisANTTaskNames: clean all,npminstall
+  hybrisANTTaskNames: clean,all,deploy,initialize,npminstall
 

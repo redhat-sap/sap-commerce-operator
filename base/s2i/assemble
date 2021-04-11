@@ -8,9 +8,9 @@ HYBRIS_SOURCE_FOLDER="${HYBRIS_SOURCE_DIR:-hybris}"
 HYBRIS_LOCAL_PROPERTIES_PATH="${HYBRIS_LOCAL_PROPERTIES_PATH-config/local.properties}"
 HYBRIS_SERVER_XML_PATH="${HYBRIS_SERVER_XML_PATH-config/tomcat/conf/server.xml}"
 HYBRIS_CONTENT_DIR="${LOCAL_SOURCE_DIR}/${HYBRIS_SOURCE_FOLDER}"
-ANT_BUILD_TASKS="${ANT_TASKS:-clean all}"
-ANT_DEPLOY_TASKS="${ANT_TASKS:-deploy}"
-ANT_INITIALIZE_TASKS="${ANT_TASKS:-initialize}"
+#ANT_BUILD_TASKS="${ANT_TASKS:-clean all}"
+#ANT_DEPLOY_TASKS="${ANT_TASKS:-deploy}"
+#ANT_INITIALIZE_TASKS="${ANT_TASKS:-initialize}"
 SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE="${SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE}"
 APACHE_JVM_ROUTE_NAME="${APACHE_JVM_ROUTE_NAME}"
 HYBRIS_ANT_TASK_NAMES="${HYBRIS_ANT_TASK_NAMES}"
@@ -40,11 +40,11 @@ if [ ! -z "${APACHE_JVM_ROUTE_NAME}" ]; then
     sed -i s/ChangeMe/"${APACHE_JVM_ROUTE_NAME}"/g ${HYBRIS_HOME}/${HYBRIS_SERVER_XML_PATH}
     #echo "---> Apache config modification complete"
 else
-    echo "---> Apache config ${HYBRIS_HOME}/${HYBRIS_SERVER_XML_PATH}present in the source repo will be used as is"
+    echo "---> Apache config ${HYBRIS_HOME}/${HYBRIS_SERVER_XML_PATH} present in the source repo will be used as is"
 fi
 
 # Removing Hybris Source
-rm -rf "${HYBRIS_CONTENT_DIR}"
+#rm -rf "${HYBRIS_CONTENT_DIR}"
 
 
 # Build Hybris Server
@@ -57,12 +57,14 @@ if [ ! -z "${HYBRIS_ANT_TASK_NAMES}" ]; then
     IFS=","
     for v in ${HYBRIS_ANT_TASK_NAMES}
     do
-        echo "---> Executing >ant $v..."
-        ant "$v"
+        echo "---> Executing ant $v"
+        ant $v
     done
     echo "---> All Hybris ANT tasks execution completed for ${HYBRIS_ANT_TASK_NAMES}"
 else
     echo "---> No Hybris ANT tasks to execute ${HYBRIS_ANT_TASK_NAMES}"
+    echo "---> Executing >ant with default task clean all"
+    ant clean all
 fi
 
 echo
@@ -97,12 +99,13 @@ echo "---> SAP Commerce Build Successful!"
 #    echo "SAP Commerce Initializing Failed!"
 #    exit 1
 #fi
-#echo
-#echo "---> Fixing Permissions ..."
+
+echo
+echo "---> Fixing Permissions ..."
 
 chmod -R u+rwx ${HYBRIS_HOME}
 chmod -R g+rwx ${HYBRIS_HOME}
-#chown -R 1001:root ${HYBRIS_HOME}
+chown -R 1001:root ${HYBRIS_HOME}
 
 echo "---> Cleaning Source Directory ..."
 rm -rf "${LOCAL_SOURCE_DIR}"
