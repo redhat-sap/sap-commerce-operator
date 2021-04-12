@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.0.2
+VERSION ?= 0.0.1
 # Default bundle image tag
 BUNDLE_IMG ?= hybris-bundle:$(VERSION)
 # Options for 'bundle-build'
