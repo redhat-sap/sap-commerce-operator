@@ -41,6 +41,15 @@ type HybrisAppSpec struct {
 
 	// Hybris app repository source location
 	SourceRepoContext string `json:"sourceRepoContext,omitempty"`
+
+	// Hybris app repository local.properties override location
+	SourceRepoLocalPorpertiesOverride string `json:"sourceRepoLocalPropertiesOverride,omitempty"`
+
+	// Hybris app Apache server.xml jvmRoute name
+	ApachejvmRouteName string `json:"apachejvmRouteName,omitempty"`
+
+	// Hybris app ANT tasks
+	HybrisANTTaskNames string `json:"hybrisANTTaskNames,omitempty"`
 }
 
 type DeploymentConfigStatusCondition struct {
