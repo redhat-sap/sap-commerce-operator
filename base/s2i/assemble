@@ -49,8 +49,13 @@ if [ ! -z "${HYBRIS_ANT_TASK_NAMES}" ]; then
     IFS=","
     for v in ${HYBRIS_ANT_TASK_NAMES}
     do
-        echo "---> Executing ant $v"
+        echo "---> Executing ANT $v"
         ant $v
+        if [ $? -ne 0 ]; then
+            echo
+            echo "SAP Commerce Build Failed for ANT task $v Exiting and aborting further execution"
+            exit 1
+        fi
     done
     echo "---> All Hybris ANT tasks execution completed for ${HYBRIS_ANT_TASK_NAMES}"
 else
