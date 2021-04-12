@@ -53,7 +53,7 @@ if [ ! -z "${HYBRIS_ANT_TASK_NAMES}" ]; then
         ant $v
         if [ $? -ne 0 ]; then
             echo
-            echo "SAP Commerce Build Failed for ANT task $v Exiting and aborting further execution"
+            echo "---> SAP Commerce Build Failed for ANT task $v Exiting and aborting further execution"
             exit 1
         fi
     done
