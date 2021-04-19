@@ -100,8 +100,11 @@ This operator manages the process for building and deploying the SAP Commerce ap
          
         5. sourceRepoContext: an optional subdirectory of your source code for your Hybris application
        <img src="images/hybrisapp-create.png" width="1080">
+        
         6. Apachejvm Route Name: an optional property that replaces the Apache Tomcat server.xml for the jvmRoute with a value of 'ChangeMe' to one specified here
+        
         7. Source Repo Local Properties Override: an optional property that provides a absolute path of file for a Git path that can replace the contents of local.properties used by Hybris
+        
         8. Hybris ANT Task Names: a custom list of Hybris ANT tasks to execute. This entry default to ANT tasks 'clean,all'. The user can override the default here
        <img src="images/hybrisapp-lennoxpoc-1.png" width="1080">
     
