@@ -6,7 +6,7 @@ metadata:
     capabilities: Basic Install
     categories: Application
     description: Building and running SAP Commerce in OpenShift
-    operators.operatorframework.io/builder: operator-sdk-v1.0.1+git
+    operators.operatorframework.io/builder: operator-sdk-v1.6.1+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/redhat-sap/sap-commerce-operator
     support: Red Hat
