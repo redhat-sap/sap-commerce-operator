@@ -10,5 +10,8 @@ spec:
   sourceRepoLocalPropertiesOverride: ''
   apachejvmRouteName: ''
   hybrisANTTaskNames: ''
+  podHealthyProbePath: '/platform/init'
+  startupProbePeriodSecond: 10
+  startupProbeFailureThresholdSecond: 30
  
 

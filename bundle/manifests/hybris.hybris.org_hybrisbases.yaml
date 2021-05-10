@@ -17,7 +17,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: HybrisBase is the Schema for the hybrisbases API
+      description: HybrisBase is the Schema for the Hybris Base API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -32,6 +32,12 @@ spec:
           properties:
             URL:
               description: Hybris package download URL used to download the package and build the base image
+              type: string
+            buildSourceRepo:
+              description: Source Repo stores the s2i Dockerfile
+              type: string
+            buildSourceRepoBranch:
+              description: Source Repo branch stores the s2i Dockerfile
               type: string
             imageName:
               description: Name of the Hybris base image to be built

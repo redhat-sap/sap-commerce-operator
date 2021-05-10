@@ -25,46 +25,73 @@ import (
 type HybrisAppSpec struct {
 	// Hybris base image name
 	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	BaseImageName string `json:"baseImageName,omitempty"`
 
 	// Hybris base image tag
 	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	BaseImageTag string `json:"baseImageTag,omitempty"`
 
 	// Hybris app source repository URL
 	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	SourceRepoURL string `json:"sourceRepoURL,omitempty"`
 
 	// Hybris app source repository reference
 	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Source Repo Ref or Branch Name"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	SourceRepoRef string `json:"sourceRepoRef,omitempty"`
 
 	// Hybris app repository source location
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	SourceRepoContext string `json:"sourceRepoContext,omitempty"`
 
 	// Hybris app repository local.properties override location
-	SourceRepoLocalPorpertiesOverride string `json:"sourceRepoLocalPropertiesOverride,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	SourceRepoLocalPropertiesOverride string `json:"sourceRepoLocalPropertiesOverride,omitempty"`
 
-	// Hybris app Apache server.xml jvmRoute name
+	// Hybris app Apache Tomcat server.xml jvmRoute name
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Apache Tomcat jvmRoute name"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	ApachejvmRouteName string `json:"apachejvmRouteName,omitempty"`
 
 	// Hybris app ANT tasks
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Specify ANT tasks, e.g. clean,compile,deploy"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	HybrisANTTaskNames string `json:"hybrisANTTaskNames,omitempty"`
+
+	// Pod Healthy Probe path for startup and readiness probe
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	PodHealthyProbePath string `json:"podHealthyProbePath,omitempty"`
+
+	// Period Second for Startup Probe
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	StartupProbePeriodSecond int32 `json:"startupProbePeriodSecond,omitempty"`
+
+	// Failure Threshold second for Startup Probe
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	StartupProbeFailureThresholdSecond int32 `json:"startupProbeFailureThresholdSecond,omitempty"`
 }
 
 type DeploymentConfigStatusCondition struct {
 	// Conditions of the deploymentConfig for the Hybris app
+	// +operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes.conditions"}
 	Conditions []status.Condition `json:"conditions"`
 }
 
 type RouteStatusCondition struct {
 	// Name of the route for the Hybris app
+	// +operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	RouteName string `json:"routeName"`
 
 	// Host of the route for the Hybris app
+	// +operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	Host string `json:"host"`
 
 	// Conditions of the route for the Hybris app
+	// +operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes.conditions"}
 	Conditions []status.Condition `json:"conditions"`
 }
 
@@ -73,14 +100,14 @@ type HybrisAppStatus struct {
 	BuildConditions []BuildStatusCondition `json:"buildConditions"`
 
 	DeploymentConfigConditions DeploymentConfigStatusCondition `json:"deploymentConfigConditions"`
-
-	RouteConditions []RouteStatusCondition `json:"routeConditions"`
+	RouteConditions            []RouteStatusCondition          `json:"routeConditions"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
 // HybrisApp is the Schema for the hybrisapps API
+//+operator-sdk:csv:customresourcedefinitions:displayName="Hybris Application"
 type HybrisApp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

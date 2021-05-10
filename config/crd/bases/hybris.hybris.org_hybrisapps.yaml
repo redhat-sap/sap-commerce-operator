@@ -37,7 +37,7 @@ spec:
           description: HybrisAppSpec defines the desired state of HybrisApp
           properties:
             apachejvmRouteName:
-              description: Hybris app Apache server.xml jvmRoute name
+              description: Hybris app Apache Tomcat server.xml jvmRoute name
               type: string
             baseImageName:
               description: Hybris base image name
@@ -47,6 +47,9 @@ spec:
               type: string
             hybrisANTTaskNames:
               description: Hybris app ANT tasks
+              type: string
+            podHealthyProbePath:
+              description: Pod Healthy Probe path for startup and readiness probe
               type: string
             sourceRepoContext:
               description: Hybris app repository source location
@@ -60,6 +63,14 @@ spec:
             sourceRepoURL:
               description: Hybris app source repository URL
               type: string
+            startupProbeFailureThresholdSecond:
+              description: Failure Threshold second for Startup Probe
+              format: int32
+              type: integer
+            startupProbePeriodSecond:
+              description: Period Second for Startup Probe
+              format: int32
+              type: integer
           type: object
         status:
           description: HybrisAppStatus defines the observed state of HybrisApp

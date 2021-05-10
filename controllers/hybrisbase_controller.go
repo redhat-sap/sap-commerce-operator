@@ -45,8 +45,7 @@ import (
 )
 
 const (
-	DockerFileRepoUrl = "https://github.com/redhat-sap/sap-commerce-operator"
-	SapJdkUrl         = "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm"
+	SapJdkUrl = "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm"
 )
 
 // HybrisBaseReconciler reconciles a HybrisBase object
@@ -323,8 +322,8 @@ func (r *HybrisBaseReconciler) createBuildConfigForHybrisBase(hybrisBase *hybris
 				Source: buildv1.BuildSource{
 					Type: buildv1.BuildSourceGit,
 					Git: &buildv1.GitBuildSource{
-						URI: DockerFileRepoUrl,
-						Ref: "master",
+						URI: hybrisBase.Spec.BuildSourceRepo,
+						Ref: hybrisBase.Spec.BuildSourceRepoBranch,
 					},
 					ContextDir: "base",
 				},

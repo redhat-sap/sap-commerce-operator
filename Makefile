@@ -1,7 +1,10 @@
 # Current Operator version
 VERSION ?= 0.0.1
+
+IMAGE_TAG_BASE ?= quay.io/redhat-sap-cop/hybris-operator
+
 # Default bundle image tag
-BUNDLE_IMG ?= hybris-bundle:$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -12,7 +15,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= hybris:latest
+IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -38,9 +41,11 @@ PKG_MAN_OPTS ?= $(FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)
 
 all: manager
 
-# Run tests
-test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
+test: manifests generate fmt vet ## Run tests.
+	mkdir -p ${ENVTEST_ASSETS_DIR}
+	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
+	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
@@ -58,10 +63,12 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests kustomize
+deploy: manifests kustomize ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -132,9 +139,55 @@ bundle: manifests
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+.PHONY: bundle-push
+bundle-push: ## Push the bundle image.
+	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
+
 # Generate package manifests.
 .PHONY: packagemanifests
 packagemanifests: kustomize manifests
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate packagemanifests -q --version $(VERSION) $(PKG_MAN_OPTS)
+
+
+.PHONY: opm
+OPM = ./bin/opm
+opm: ## Download opm locally if necessary.
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$${OS}-$${ARCH}-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else
+OPM = $(shell which opm)
+endif
+endif
+
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
+# These images MUST exist in a registry and be pull-able.
+BUNDLE_IMGS ?= $(BUNDLE_IMG)
+
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
+
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+ifneq ($(origin CATALOG_BASE_IMG), undefined)
+FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+endif
+
+# Build a catalog image by adding bundle images to an empty catalog using the operator package manager tool, 'opm'.
+# This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
+# https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
+.PHONY: catalog-build
+catalog-build: opm ## Build a catalog image.
+	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+
+# Push the catalog image.
+.PHONY: catalog-push
+catalog-push: ## Push a catalog image.
+	$(MAKE) docker-push IMG=$(CATALOG_IMG)
