@@ -11,8 +11,11 @@ metadata:
             "name": "hybrisapp-sample"
           },
           "spec": {
+            "apachejvmRouteName": "",
             "baseImageName": "hybris-base",
-            "baseImageTag": "v0.1",
+            "baseImageTag": "v0.2",
+            "hybrisANTTaskNames": "",
+            "sourceRepoLocalPropertiesOverride": "",
             "sourceRepoRef": "master",
             "sourceRepoURL": "https://github.com/redhat-sap/sap-commerce-app-example.git"
           }
@@ -34,7 +37,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    operators.operatorframework.io/builder: operator-sdk-v1.0.0
+    operators.operatorframework.io/builder: operator-sdk-v1.4.2+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
   name: sap-commerce-operator.v0.0.1
   namespace: placeholder

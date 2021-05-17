@@ -520,9 +520,10 @@ func (r *HybrisAppReconciler) ensureRoute(hybrisApp *hybrisv1alpha1.HybrisApp, c
 		// Define a new Route
 		route := &routev1.Route{
 			ObjectMeta: v1.ObjectMeta{
-				Name:      hybrisApp.Name,
-				Namespace: hybrisApp.Namespace,
-				Labels:    labelsForHybrisApp(hybrisApp.Name),
+				Name:        hybrisApp.Name,
+				Namespace:   hybrisApp.Namespace,
+				Labels:      labelsForHybrisApp(hybrisApp.Name),
+				Annotations: map[string]string{"haproxy.router.openshift.io/balance": "source"},
 			},
 			Spec: routev1.RouteSpec{
 				Host: "",
@@ -685,6 +686,20 @@ func (r *HybrisAppReconciler) createDeploymentConfigForHybrisApp(hybrisApp *hybr
 									corev1.ResourceCPU:    resource.MustParse("1"),
 									corev1.ResourceMemory: resource.MustParse("1Gi"),
 								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Scheme: "HTTP",
+										Port:   intstr.FromInt(9001),
+										Path:   "/platform/init",
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      15,
+								PeriodSeconds:       5,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 							TerminationMessagePath:   "/dev/termination-log",
 							TerminationMessagePolicy: corev1.TerminationMessageReadFile,

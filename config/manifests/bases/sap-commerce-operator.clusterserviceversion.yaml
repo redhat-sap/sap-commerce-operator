@@ -6,21 +6,21 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.0.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: sap-commerce-operator.vX.Y.Z
+  name: sap-commerce-operator.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: HybrisBase is the Schema for the hybrisbases API
-      displayName: Hybris Base
-      kind: HybrisBase
-      name: hybrisbases.hybris.hybris.org
-      version: v1alpha1
     - description: HybrisApp is the Schema for the hybrisapps API
       displayName: Hybris App
       kind: HybrisApp
       name: hybrisapps.hybris.hybris.org
+      version: v1alpha1
+    - description: HybrisBase is the Schema for the hybrisbases API
+      displayName: Hybris Base
+      kind: HybrisBase
+      name: hybrisbases.hybris.hybris.org
       version: v1alpha1
   description: Sap Commerce Operator description. TODO.
   displayName: Sap Commerce Operator
