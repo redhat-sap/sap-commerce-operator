@@ -21,7 +21,7 @@ This operator manages the process for building and deploying the SAP Commerce ap
     Note: replace the `namespace` with your project in the yaml.
 
     ```bash
-    oc apply -f olm/catalog.yaml
+    oc apply -f config/samples/catalog.yaml
     ```
 
     Then wait for a couple of minutes for the `CatalogSource` to be loaded.
@@ -140,24 +140,27 @@ This operator manages the process for building and deploying the SAP Commerce ap
 ## Development
 
 ### Requirement
-- [Go](https://golang.org/) 1.13+
+- [Go](https://golang.org/) 1.15+
 - [Docker](https://www.docker.com/) 17.03+
-- [Operator SDK](https://sdk.operatorframework.io/docs/installation/install-operator-sdk/#install-from-github-release) v1.0.0
-- [Kubebuilder](https://book.kubebuilder.io/quick-start.html#installation) v2.3.1
-- [opm](https://github.com/operator-framework/operator-registry/blob/master/docs/design/opm-tooling.md) v1.13.8
+- [Operator SDK](https://sdk.operatorframework.io/docs/installation/install-operator-sdk/#install-from-github-release) v1.6.0+
+- [opm](https://github.com/operator-framework/operator-registry/blob/master/docs/design/opm-tooling.md) v1.15.1
 
 ### Build Operator
     
    1. To build the operator image
+      modify `Makefile` to setup the image path
+      ```asciidoc
+      IMAGE_TAG_BASE=<...>
+      ```
    
       ```bash
-      make docker-build IMG=<your operator image name>:<your operator image tag>
+      make docker-build
       ```
 
    2. To push your operator image to registry
    
       ```bash
-      make docker-push IMG=<your operator image name>:<your operator image tag>
+      make docker-push
       ```
 
 ### Deploy Operator Manually
@@ -185,30 +188,48 @@ This operator manages the process for building and deploying the SAP Commerce ap
      
       Note: please update the specs of the sample yamls to reflect your desired deployment.
 
-### Deploy Operator with OLM
+### Deploy the Operator to OLM with a Bundle
+   1. Build and push the bundle
 
-   1. Build the bundle
-       
+      modify `Makefile` to setup the image path
+      ```asciidoc
+      IMAGE_TAG_BASE=<...>
+      ```
+
       ```bash
-      make bundle
+      make bundle bundle-build bundle-push
       ```
       
-   2. Build and push the bundle image
-   
-      ```bash
-      docker build -t <your bundle image name>:<your bundle image tag> -f bundle.Dockerfile .
-      docker push <your bundle image name>:<your bundle image tag>
+      Deploy to OLM
+      ```asciidoc
+      operator-sdk run bundle quay.io/<image_repo>/hybris-operator-bundle:<version>
       ```
-     
-   3. Build and push the index image
+      Undeploy from OLM
+      ```
+      operator-sdk cleanup sap-commerce-operator
+      ```
+
+### Deploy the Operator to OLM with a Catalog
+
+   1. Build and push the bundle
+
+      modify `Makefile` to setup the image path
+      ```asciidoc
+      IMAGE_TAG_BASE=<...>
+      ```
       
       ```bash
-      opm index add --bundles <your bundle image name>:<your bundle image tag> --tag <your index image name>:<your index image tag> --container-tool docker
-      docker push <your index image name>:<your index image tag>
+      make bundle bundle-build bundle-push
       ```
-   4. Deploy the operator
+   2. Build and push the catalog or index image
+      
+      ```bash
+      make catalog-build
+      make catalog-push
+      ```
+   3. Deploy the operator
    
-      Update the `image` field of `olm/catalog.yaml` with the index image your built. 
+      Update the `image` field of `config/samples/catalog.yaml` with the index image your built. 
       
       Follow [Deploy Operator to OpenShift 4.5+ using Operator Lifecycle Manager](#deploy-operator-to-openshift-45-using-operator-lifecycle-manager-olm) to deploy the operator.
       

@@ -194,7 +194,7 @@ spec:
   - sap-commerce-operator
   links:
   - name: Sap Commerce Operator
-    url: https://sap-commerce-operator.domain
+    url: https://github.com/redhat-sap/sap-commerce-operator
   maintainers:
   - email: customerservice@redhat.com
     name: Red Hat
