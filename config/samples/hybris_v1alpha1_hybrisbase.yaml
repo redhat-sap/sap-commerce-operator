@@ -5,8 +5,10 @@ metadata:
 spec:
   URL: http://nexus.redhat.com/nexus/service/local/repositories/releases/content/org/hybris/hybris/1.0/hybris-1.0.tar.gz
   imageName: hybris-base
-  imageTag: v0.1
+  imageTag: v0.2
   jdkURL: https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.5/sapmachine-jdk-11.0.5-1.x86_64.rpm
   password: admin123
   username: admin
+  buildSourceRepo: https://github.com/redhat-sap/sap-commerce-operator
+  buildSourceRepoBranch: master
 

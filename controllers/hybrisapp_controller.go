@@ -347,7 +347,7 @@ func (r *HybrisAppReconciler) createBuildConfigForHybrisApp(hybrisApp *hybrisv1a
 					SourceStrategy: &buildv1.SourceBuildStrategy{
 						From: corev1.ObjectReference{Kind: "ImageStreamTag", Name: strings.Join([]string{hybrisApp.Spec.BaseImageName, hybrisApp.Spec.BaseImageTag}, ":")},
 						Env: []corev1.EnvVar{
-							{Name: "SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE", Value: hybrisApp.Spec.SourceRepoLocalPorpertiesOverride},
+							{Name: "SOURCE_REPO_LOCAL_PROPERTIES_OVERRIDE", Value: hybrisApp.Spec.SourceRepoLocalPropertiesOverride},
 							{Name: "APACHE_JVM_ROUTE_NAME", Value: hybrisApp.Spec.ApachejvmRouteName},
 							{Name: "HYBRIS_ANT_TASK_NAMES", Value: hybrisApp.Spec.HybrisANTTaskNames},
 						},
@@ -520,9 +520,10 @@ func (r *HybrisAppReconciler) ensureRoute(hybrisApp *hybrisv1alpha1.HybrisApp, c
 		// Define a new Route
 		route := &routev1.Route{
 			ObjectMeta: v1.ObjectMeta{
-				Name:      hybrisApp.Name,
-				Namespace: hybrisApp.Namespace,
-				Labels:    labelsForHybrisApp(hybrisApp.Name),
+				Name:        hybrisApp.Name,
+				Namespace:   hybrisApp.Namespace,
+				Labels:      labelsForHybrisApp(hybrisApp.Name),
+				Annotations: map[string]string{"haproxy.router.openshift.io/balance": "source"},
 			},
 			Spec: routev1.RouteSpec{
 				Host: "",
@@ -685,6 +686,31 @@ func (r *HybrisAppReconciler) createDeploymentConfigForHybrisApp(hybrisApp *hybr
 									corev1.ResourceCPU:    resource.MustParse("1"),
 									corev1.ResourceMemory: resource.MustParse("1Gi"),
 								},
+							},
+							StartupProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Scheme: "HTTP",
+										Port:   intstr.FromInt(9001),
+										Path:   hybrisApp.Spec.PodHealthyProbePath,
+									},
+								},
+								FailureThreshold: hybrisApp.Spec.StartupProbeFailureThresholdSecond,
+								PeriodSeconds:    hybrisApp.Spec.StartupProbePeriodSecond,
+							},
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Scheme: "HTTP",
+										Port:   intstr.FromInt(9001),
+										Path:   "/platform/init",
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      15,
+								PeriodSeconds:       15,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 							TerminationMessagePath:   "/dev/termination-log",
 							TerminationMessagePolicy: corev1.TerminationMessageReadFile,
