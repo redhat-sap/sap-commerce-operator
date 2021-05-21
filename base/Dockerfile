@@ -24,6 +24,9 @@ COPY --from=downloader /tmp/$SAPMACHINE_FILE_NAME /tmp
 
 RUN yum install -y /tmp/$SAPMACHINE_FILE_NAME && \
     rm /tmp/$SAPMACHINE_FILE_NAME && \
+    yum install -y python39 && \
+    ln -s /usr/bin/python3 /usr/bin/python && \
+    yum install -y bzip2 && \
     cp -R $HYBRIS_HOME/bin/platform/resources/configtemplates/production $HYBRIS_HOME/config && \
     useradd -u 1001 -r -g 0 -d $HYBRIS_HOME -s /sbin/nologin -c "Hybris User" hybris && \
     chmod -R g+rwX $HYBRIS_HOME && \
