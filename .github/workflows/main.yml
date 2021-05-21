@@ -9,9 +9,9 @@ jobs:
     env:
       OPERATOR_IMAGE: quay.io/redhat-sap-cop/hybris-operator
       OPERATOR_TAG: 0.0.2
-      BUNDLE_IMAGE: quay.io/redhat-sap-cop/hybris-operator-bundle
+      BUNDLE_IMAGE: quay.io/redhat-sap-cop/hybris-bundle
       BUNDLE_TAG: v0.0.2
-      INDEX_IMAGE: quay.io/redhat-sap-cop/hybris-operator-index
+      INDEX_IMAGE: quay.io/redhat-sap-cop/hybris-index
       INDEX_TAG: v0.0.2
     steps:
       - uses: actions/setup-go@v2

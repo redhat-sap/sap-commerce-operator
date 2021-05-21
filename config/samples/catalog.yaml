@@ -5,4 +5,4 @@ metadata:
   namespace: sap-commerce
 spec:
   sourceType: grpc
-  image: quay.io/redhat-sap-cop/hybris-index:0.1
+  image: quay.io/redhat-sap-cop/hybris-index:v0.0.2
