@@ -50,6 +50,7 @@ if [ ! -z "${HYBRIS_ANT_TASK_NAMES}" ]; then
     for v in ${HYBRIS_ANT_TASK_NAMES}
     do
         echo "---> Executing ANT $v"
+        IFS=" "
         ant $v
         if [ $? -ne 0 ]; then
             echo
