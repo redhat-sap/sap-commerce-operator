@@ -11,7 +11,7 @@ spec:
   apachejvmRouteName: ''
   hybrisANTTaskNames: ''
   podHealthyProbePath: '/platform/init'
-  startupProbePeriodSecond: 10
-  startupProbeFailureThresholdSecond: 30
+  startupProbePeriodSecond: 60
+  startupProbeFailureThresholdSecond: 100
  
 
