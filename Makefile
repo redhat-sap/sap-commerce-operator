@@ -4,7 +4,7 @@ VERSION ?= 0.0.2
 IMAGE_TAG_BASE ?= quay.io/redhat-sap-cop/hybris-operator
 
 # Default bundle image tag
-BUNDLE_IMG ?= quay.io/redhat-sap-cop/hybris-bundle:v$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -97,38 +97,6 @@ docker-build: test ## Build the docker image
 docker-push: ## Push docker image to the registry
 	docker push ${IMG}
 
-# find or download controller-gen
-# download controller-gen if necessary
-#controller-gen:
-#ifeq (, $(shell which controller-gen))
-#	@{ \
-#	set -e ;\
-#	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-#	cd $$CONTROLLER_GEN_TMP_DIR ;\
-#	go mod init tmp ;\
-#	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
-#	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-#	}
-#CONTROLLER_GEN=$(GOBIN)/controller-gen
-#else
-#CONTROLLER_GEN=$(shell which controller-gen)
-#endif
-
-#kustomize:
-#ifeq (, $(shell which kustomize))
-#	@{ \
-#	set -e ;\
-#	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-#	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-#	go mod init tmp ;\
-#	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-#	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-#	}
-#KUSTOMIZE=$(GOBIN)/kustomize
-#else
-#KUSTOMIZE=$(shell which kustomize)
-#endif
-
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
@@ -190,7 +158,7 @@ endif
 BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
-CATALOG_IMG ?= quay.io/redhat-sap-cop/hybris-index:v$(VERSION)
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
 ifneq ($(origin CATALOG_BASE_IMG), undefined)

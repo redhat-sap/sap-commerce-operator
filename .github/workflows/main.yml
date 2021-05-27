@@ -6,13 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      OPERATOR_IMAGE: quay.io/redhat-sap-cop/hybris-operator
-      OPERATOR_TAG: 0.0.2
-      BUNDLE_IMAGE: quay.io/redhat-sap-cop/hybris-bundle
-      BUNDLE_TAG: v0.0.2
-      INDEX_IMAGE: quay.io/redhat-sap-cop/hybris-index
-      INDEX_TAG: v0.0.2
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -26,37 +19,18 @@ jobs:
         with:
           version: latest
       - uses: actions/checkout@v2
-      - name: Install Kubebuilder
-        env:
-          RELEASE_VERSION: 2.3.1
-        run: |
-          os=$(go env GOOS)
-          arch=$(go env GOARCH)
-          curl -L https://go.kubebuilder.io/dl/${RELEASE_VERSION}/${os}/${arch} | tar -xz -C /tmp/
-          sudo mv /tmp/kubebuilder_${RELEASE_VERSION}_${os}_${arch} /usr/local/kubebuilder
       - name: Install Operator SDK
         env:
           RELEASE_VERSION: v1.6.1
         run: |
           curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64
           chmod +x operator-sdk_linux_amd64 && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk_linux_amd64 /usr/local/bin/operator-sdk && rm operator-sdk_linux_amd64
-      - name: Install OPM
-        env:
-          RELEASE_VERSION: v1.15.1
-        run: |
-          curl -LO https://github.com/operator-framework/operator-registry/releases/download/${RELEASE_VERSION}/linux-amd64-opm
-          chmod +x linux-amd64-opm && sudo mkdir -p /usr/local/bin/ && sudo cp linux-amd64-opm /usr/local/bin/opm && rm linux-amd64-opm
       - name: Build and Push Operator
         run: |
-          export PATH=$PATH:/usr/local/kubebuilder/bin
-          make docker-build docker-push IMG=${OPERATOR_IMAGE}:${OPERATOR_TAG}
+          make docker-build docker-push
       - name: Build and Push Bundle
         run: |
-          make bundle
-          docker build -t ${BUNDLE_IMAGE}:${BUNDLE_TAG} -f bundle.Dockerfile .
-          docker push ${BUNDLE_IMAGE}:${BUNDLE_TAG}
+          make bundle bundle-build bundle-push
       - name: Build and Push Index
         run: |
-          opm index add --bundles ${BUNDLE_IMAGE}:${BUNDLE_TAG} --tag ${INDEX_IMAGE}:${INDEX_TAG} --container-tool docker
-          docker push ${INDEX_IMAGE}:${INDEX_TAG}
-      
+          make catalog-build catalog-push

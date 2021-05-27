@@ -19,8 +19,8 @@ metadata:
             "sourceRepoLocalPropertiesOverride": "",
             "sourceRepoRef": "master",
             "sourceRepoURL": "https://github.com/redhat-sap/sap-commerce-app-example.git",
-            "startupProbeFailureThresholdSecond": 30,
-            "startupProbePeriodSecond": 10
+            "startupProbeFailureThresholdSecond": 100,
+            "startupProbePeriodSecond": 60
           }
         },
         {
