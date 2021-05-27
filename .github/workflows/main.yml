@@ -19,6 +19,14 @@ jobs:
         with:
           version: latest
       - uses: actions/checkout@v2
+      - name: Install Kubebuilder
+        env:
+          RELEASE_VERSION: 2.3.1
+        run: |
+          os=$(go env GOOS)
+          arch=$(go env GOARCH)
+          curl -L https://go.kubebuilder.io/dl/${RELEASE_VERSION}/${os}/${arch} | tar -xz -C /tmp/
+          sudo mv /tmp/kubebuilder_${RELEASE_VERSION}_${os}_${arch} /usr/local/kubebuilder
       - name: Install Operator SDK
         env:
           RELEASE_VERSION: v1.6.1
@@ -27,6 +35,7 @@ jobs:
           chmod +x operator-sdk_linux_amd64 && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk_linux_amd64 /usr/local/bin/operator-sdk && rm operator-sdk_linux_amd64
       - name: Build and Push Operator
         run: |
+          export PATH=$PATH:/usr/local/kubebuilder/bin
           make docker-build docker-push
       - name: Build and Push Bundle
         run: |
