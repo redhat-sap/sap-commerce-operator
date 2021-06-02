@@ -28,7 +28,7 @@ This operator manages the process for building and deploying the SAP Commerce ap
 
 3. Install the Operator
 
-    1. Navigate to `OperatorHub` in the Openshift web console.
+    1. Navigate to `OperatorHub` in the OpenShift web console.
     
     2. Search with `SAP` and select the `SAP Commerce Operator`.
        <img src="images/operator-search.png" width="1080">
@@ -51,12 +51,15 @@ This operator manages the process for building and deploying the SAP Commerce ap
     ./hack/package-hybris.sh <path to the SAP Commerce zip file>
     ```
    
-   3. Upload the `hybris.tar.gz` package to a nexus server that is accessible from your Openshift cluster.
+   3. Upload the `hybris.tar.gz` package to a Nexus server that is accessible from your OpenShift cluster.
+    
+      In case you need to install a Nexus server in your OpenShift cluster, you can reference [here](https://github.com/redhat-sap/sap-commerce).
+
       <img src="images/nexus-example.png" width="1080">
 
 2. Create Hybris base image with operator
     
-    1. Navigate to `Installed Operators` in the Openshift web console
+    1. Navigate to `Installed Operators` in the OpenShift web console
     
     2. Select `Hybris Base` from the `Provided APIs` of the `SAP Commerce Operator`
     
@@ -70,12 +73,20 @@ This operator manages the process for building and deploying the SAP Commerce ap
           
         4. username: username that is used to access the nexus server
          
-        5. passowrd: password that is used to access the nexus server
+        5. password: password that is used to access the nexus server
          
         6. jdkURL: the URL to download the SAP JDK 
-       <img src="images/hybrisbase-create.png" width="1080">
-    
-    4. A `Build` will be created to build the Hybris base image
+
+   4. Hidden fields (only show in YAML view) to customize the Git Repo for source to image build:
+      This is the repo where the source to image build scripts (e.g. Dockerfile, etc) are stored.
+       1. sourceRepoURL: Git repo full URL
+          
+       2. sourceRepoRef: Git branch name
+          
+          <img src="images/hybrisbase-create.png" width="1080">
+
+
+    5. A `Build` will be created to build the Hybris base image
     
        Wait for the `Build` to complete successfully before deploying the SAP Commerce application.
        <img src="images/hybrisbase-build.png" width="1080">
@@ -84,7 +95,7 @@ This operator manages the process for building and deploying the SAP Commerce ap
 
 1. Create Hybris application with operator
 
-    1. Navigate to `Installed Operators` in the Openshift web console.
+    1. Navigate to `Installed Operators` in the OpenShift web console.
         
     2. Select `Hybris App` from the `Provided APIs` of the `SAP Commerce Operator`
     
@@ -107,13 +118,20 @@ This operator manages the process for building and deploying the SAP Commerce ap
         
         8. Hybris ANT Task Names: a custom list of Hybris ANT tasks to execute. This entry default to ANT tasks 'clean,all'. The user can override the default here
        <img src="images/hybrisapp-lennoxpoc-1.png" width="1080">
+           
+    4. Hidden fields (only show in YAML view) to customize the Pod Startup probe:
+        1. podHealthyProbePath: the HTTP GET end point where the probe is performed
     
-    4. A `Build` will be created to build the Hybris app image
+        2. startupProbePeriodSecond: the delay, in seconds, between performing probes
+    
+        3. startupProbeFailureThreshold: the number of times to try to probe after a failure
+   
+    5. A `Build` will be created to build the Hybris app image
        <img src="images/hybrisapp-build.png" width="1080">
     
-    5. Once the `Build` completes successfully, a `DeploymentConfig`, `Service` and `Route` will be created for deploying the Hybris application.
+    6. Once the `Build` completes successfully, a `DeploymentConfig`, `Service` and `Route` will be created for deploying the Hybris application.
        
-    6. Use the Hybris application `Route` location to access the console
+    7. Use the Hybris application `Route` location to access the console
        <img src="images/hybrisapp-route.png" width="1080">
        <img src="images/hybris-console.png" width="1080"> 
 

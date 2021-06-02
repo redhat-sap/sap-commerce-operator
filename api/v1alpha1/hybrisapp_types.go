@@ -72,7 +72,7 @@ type HybrisAppSpec struct {
 
 	// Failure Threshold second for Startup Probe
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	StartupProbeFailureThresholdSecond int32 `json:"startupProbeFailureThresholdSecond,omitempty"`
+	StartupProbeFailureThreshold int32 `json:"startupProbeFailureThreshold,omitempty"`
 }
 
 type DeploymentConfigStatusCondition struct {

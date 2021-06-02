@@ -12,6 +12,6 @@ spec:
   hybrisANTTaskNames: ''
   podHealthyProbePath: '/platform/init'
   startupProbePeriodSecond: 60
-  startupProbeFailureThresholdSecond: 100
+  startupProbeFailureThreshold: 100
  
 

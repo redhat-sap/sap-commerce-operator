@@ -695,7 +695,7 @@ func (r *HybrisAppReconciler) createDeploymentConfigForHybrisApp(hybrisApp *hybr
 										Path:   hybrisApp.Spec.PodHealthyProbePath,
 									},
 								},
-								FailureThreshold: hybrisApp.Spec.StartupProbeFailureThresholdSecond,
+								FailureThreshold: hybrisApp.Spec.StartupProbeFailureThreshold,
 								PeriodSeconds:    hybrisApp.Spec.StartupProbePeriodSecond,
 							},
 							ReadinessProbe: &corev1.Probe{

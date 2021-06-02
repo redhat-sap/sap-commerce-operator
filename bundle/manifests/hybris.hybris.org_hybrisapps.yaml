@@ -57,7 +57,7 @@ spec:
               sourceRepoURL:
                 description: Hybris app source repository URL
                 type: string
-              startupProbeFailureThresholdSecond:
+              startupProbeFailureThreshold:
                 description: Failure Threshold second for Startup Probe
                 format: int32
                 type: integer
