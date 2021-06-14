@@ -10,5 +10,5 @@ spec:
   password: admin123
   username: admin
   buildSourceRepo: https://github.com/redhat-sap/sap-commerce-operator
-  buildSourceRepoBranch: master
+  buildSourceRepoBranch: main
 
