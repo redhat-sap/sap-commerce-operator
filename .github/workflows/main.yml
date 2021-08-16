@@ -2,7 +2,7 @@ name: Build Hybris Operator Image
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest

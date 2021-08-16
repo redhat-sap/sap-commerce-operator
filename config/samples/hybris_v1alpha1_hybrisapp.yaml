@@ -5,7 +5,7 @@ metadata:
 spec:
   baseImageName: hybris-base
   baseImageTag: v0.2
-  sourceRepoRef: master
+  sourceRepoRef: main
   sourceRepoURL: https://github.com/redhat-sap/sap-commerce-app-example.git
   sourceRepoLocalPropertiesOverride: ''
   apachejvmRouteName: ''
