@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v2
         with:
-          go-version: '^1.15.0'
+          go-version: '^1.16.0'
       - uses: docker/login-action@v1
         with:
           registry: quay.io
@@ -25,7 +25,8 @@ jobs:
         run: |
           os=$(go env GOOS)
           arch=$(go env GOARCH)
-          curl -L https://go.kubebuilder.io/dl/${RELEASE_VERSION}/${os}/${arch} | tar -xz -C /tmp/
+          curl -LO https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${RELEASE_VERSION}/kubebuilder_${RELEASE_VERSION}_${os}_${arch}.tar.gz
+          tar -xzf kubebuilder_${RELEASE_VERSION}_${os}_${arch}.tar.gz -C /tmp
           sudo mv /tmp/kubebuilder_${RELEASE_VERSION}_${os}_${arch} /usr/local/kubebuilder
       - name: Install Operator SDK
         env:
