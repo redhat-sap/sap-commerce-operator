@@ -25,7 +25,7 @@ spec:
       containers:
       - command:
         - /manager
-        image: quay.io/redhat-sap-cop/hybris-operator:0.0.2
+        image: quay.io/redhat-sap-cop/hybris-operator:0.0.3
         imagePullPolicy: Always
         name: manager
         resources:

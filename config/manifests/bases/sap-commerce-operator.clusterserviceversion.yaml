@@ -5,13 +5,13 @@ metadata:
     alm-examples: '[]'
     capabilities: Basic Install
     categories: Database
-    containerImage: quay.io/redhat-sap-cop/hybris-operator:0.0.2
+    containerImage: quay.io/redhat-sap-cop/hybris-operator:0.0.3
     description: Builds and runs SAP Commerce in OpenShift
     operators.operatorframework.io/builder: operator-sdk-v1.6.1+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/redhat-sap/sap-commerce-operator
     support: Red Hat
-  name: sap-commerce-operator.v0.0.0
+  name: sap-commerce-operator.v0.0.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -204,4 +204,5 @@ spec:
   provider:
     name: Red Hat, Inc.
     url: https://www.redhat.com
-  version: 0.0.2
+  replaces: sap-commerce-operator.v0.0.2
+  version: 0.0.3
