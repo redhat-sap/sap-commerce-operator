@@ -13,7 +13,7 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/redhat-sap-cop/hybris-operator
-  newTag: 0.0.3
+  newTag: 0.0.4
 - name: hybris
   newName: hybris
   newTag: latest

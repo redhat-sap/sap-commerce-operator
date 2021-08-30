@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.0.3
+VERSION ?= 0.0.4
 
 IMAGE_TAG_BASE ?= quay.io/redhat-sap-cop/hybris-operator
 

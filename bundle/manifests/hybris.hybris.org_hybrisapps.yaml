@@ -30,6 +30,10 @@ spec:
           spec:
             description: HybrisAppSpec defines the desired state of HybrisApp
             properties:
+              aJPServicePort:
+                description: 'Service Port for AJP End Point, range: 30000-32768'
+                format: int32
+                type: integer
               apachejvmRouteName:
                 description: Hybris app Apache Tomcat server.xml jvmRoute name
                 type: string

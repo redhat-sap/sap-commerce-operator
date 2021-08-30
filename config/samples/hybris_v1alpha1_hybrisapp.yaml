@@ -13,5 +13,4 @@ spec:
   podHealthyProbePath: '/platform/init'
   startupProbePeriodSecond: 60
   startupProbeFailureThreshold: 100
- 
-
+  aJPServicePort: 30000

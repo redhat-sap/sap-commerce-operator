@@ -479,9 +479,16 @@ func (r *HybrisAppReconciler) ensureService(hybrisApp *hybrisv1alpha1.HybrisApp,
 						TargetPort: intstr.FromInt(9002),
 						Protocol:   corev1.ProtocolTCP,
 					},
+					{
+						Name:       "8009-tcp",
+						Port:       8009,
+						TargetPort: intstr.FromInt(8009),
+						Protocol:   corev1.ProtocolTCP,
+						NodePort:   hybrisApp.Spec.AJPServicePort,
+					},
 				},
 				Selector: labelsForHybrisApp(hybrisApp.Name),
-				Type:     corev1.ServiceTypeClusterIP,
+				Type:     corev1.ServiceTypeNodePort,
 			},
 		}
 		// Set HybrisApp instance as the owner and controller
@@ -674,6 +681,10 @@ func (r *HybrisAppReconciler) createDeploymentConfigForHybrisApp(hybrisApp *hybr
 								},
 								{
 									ContainerPort: 9002,
+									Protocol:      corev1.ProtocolTCP,
+								},
+								{
+									ContainerPort: 8009,
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},

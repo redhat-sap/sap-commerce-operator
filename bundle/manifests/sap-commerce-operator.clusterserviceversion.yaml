@@ -11,6 +11,7 @@ metadata:
             "name": "hybrisapp-sample"
           },
           "spec": {
+            "aJPServicePort": 30000,
             "apachejvmRouteName": "",
             "baseImageName": "hybris-base",
             "baseImageTag": "v0.2",
@@ -49,7 +50,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/redhat-sap/sap-commerce-operator
     support: Red Hat
-  name: sap-commerce-operator.v0.0.3
+  name: sap-commerce-operator.v0.0.4
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -60,6 +61,11 @@ spec:
       kind: HybrisApp
       name: hybrisapps.hybris.hybris.org
       specDescriptors:
+      - description: 'Service Port for AJP End Point, range: 30000-32768'
+        displayName: Service Port for Apache Jserv Protocol End Point
+        path: aJPServicePort
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       - description: Hybris app Apache Tomcat server.xml jvmRoute name
         displayName: Apache Tomcat jvmRoute name
         path: apachejvmRouteName
@@ -268,7 +274,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: quay.io/redhat-sap-cop/hybris-operator:0.0.3
+                image: quay.io/redhat-sap-cop/hybris-operator:0.0.4
                 imagePullPolicy: Always
                 name: manager
                 resources:
@@ -450,4 +456,4 @@ spec:
     name: Red Hat, Inc.
     url: https://www.redhat.com
   replaces: sap-commerce-operator.v0.0.2
-  version: 0.0.3
+  version: 0.0.4
