@@ -62,6 +62,11 @@ type HybrisAppSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	HybrisANTTaskNames string `json:"hybrisANTTaskNames,omitempty"`
 
+	// Service Port for AJP End Point, range: 30000-32768
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Port for Apache Jserv Protocol End Point"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	AJPServicePort int32 `json:"aJPServicePort,omitempty"`
+
 	// Pod Healthy Probe path for startup and readiness probe
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	PodHealthyProbePath string `json:"podHealthyProbePath,omitempty"`

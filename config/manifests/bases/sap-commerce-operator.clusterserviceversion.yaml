@@ -22,6 +22,11 @@ spec:
       kind: HybrisApp
       name: hybrisapps.hybris.hybris.org
       specDescriptors:
+      - description: 'Service Port for AJP End Point, range: 30000-32768'
+        displayName: Service Port for Apache Jserv Protocol End Point
+        path: aJPServicePort
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       - description: Hybris app Apache Tomcat server.xml jvmRoute name
         displayName: Apache Tomcat jvmRoute name
         path: apachejvmRouteName

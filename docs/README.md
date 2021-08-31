@@ -119,6 +119,8 @@ This operator manages the process for building and deploying the SAP Commerce ap
         8. Hybris ANT Task Names: a custom list of Hybris ANT tasks to execute. This entry default to ANT tasks 'clean,all'. The user can override the default here
        <img src="images/hybrisapp-lennoxpoc-1.png" width="1080">
            
+        9. Service Port for Apache Jserv Protocol End Point: The port number used for AJP NodePort Service.
+           
     4. Hidden fields (only show in YAML view) to customize the Pod Startup probe:
         1. podHealthyProbePath: the HTTP GET end point where the probe is performed
     
