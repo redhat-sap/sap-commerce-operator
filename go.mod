@@ -13,3 +13,5 @@ require (
 	k8s.io/client-go v0.18.6
 	sigs.k8s.io/controller-runtime v0.6.2
 )
+
+replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
