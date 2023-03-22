@@ -8,6 +8,7 @@ require (
 	github.com/onsi/gomega v1.10.1
 	github.com/openshift/api v0.0.0-20200526144822-34f54f12813a
 	github.com/operator-framework/operator-lib v0.1.0
+	golang.org/x/net v0.8.0 // indirect
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6

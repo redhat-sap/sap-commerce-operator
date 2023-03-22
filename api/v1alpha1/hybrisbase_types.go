@@ -83,7 +83,7 @@ type HybrisBaseStatus struct {
 // +kubebuilder:subresource:status
 
 // HybrisBase is the Schema for the Hybris Base API
-//+operator-sdk:csv:customresourcedefinitions:displayName="Hybris Base"
+// +operator-sdk:csv:customresourcedefinitions:displayName="Hybris Base"
 type HybrisBase struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
