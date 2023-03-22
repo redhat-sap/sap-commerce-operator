@@ -112,7 +112,7 @@ type HybrisAppStatus struct {
 // +kubebuilder:subresource:status
 
 // HybrisApp is the Schema for the hybrisapps API
-//+operator-sdk:csv:customresourcedefinitions:displayName="Hybris Application"
+// +operator-sdk:csv:customresourcedefinitions:displayName="Hybris Application"
 type HybrisApp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
